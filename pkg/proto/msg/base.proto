@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package msg;
+
+option go_package = "go-snake-game/pkg/proto/msg";
+
+// ---- 心跳 ----
+
+// 心跳请求（客户端 → 服务端）
+message HeartbeatReq {}
+
+// 心跳响应（服务端 → 客户端）
+message HeartbeatResp {}
+
+// ---- 登录 ----
+
+// 登录请求（客户端 → 登录服）
+message LoginReq {
+  string username = 1; // 用户名
+  string password = 2; // 密码
+}
+
+// 登录响应（登录服 → 客户端）
+message LoginResp {
+  int32  code      = 1; // 状态码：0=成功，非0=失败
+  string msg       = 2; // 提示信息
+  string token     = 3; // 登录令牌，后续请求携带
+  int64  player_id = 4; // 玩家 ID
+}
+
+// ---- 通用 ----
+
+// 错误响应（服务端 → 客户端）
+message ErrorResp {
+  int32  code = 1; // 错误码
+  string msg  = 2; // 错误描述
+}

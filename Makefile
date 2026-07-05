@@ -13,8 +13,8 @@ ifeq ($(OS),Windows_NT)
 	RM = rmdir /s /q
 	# Windows 可执行文件后缀 .exe
 	EXE_SUFFIX = .exe
-	# Windows 创建文件夹命令
-	MKDIR = mkdir
+	# Windows 创建文件夹命令（忽略已存在错误）
+	MKDIR = mkdir 2>nul || exit 0
 else
 	# Mac / Linux 系统：递归强制删除文件夹
 	RM = rm -rf
@@ -32,16 +32,16 @@ endif
 all: build
 
 # ====================== 1. 编译全部三个服务 ======================
+# 创建输出bin目录，逐个编译 gateway login game
 build:
-	# 创建输出bin目录，不存在则新建
 	@$(MKDIR) $(OUTPUT_DIR)
-	# 循环遍历 gateway login game，逐个编译
-	@for svc in $(SERVICES); do \
-		echo "编译 $$svc ..."; \
-		# go build 编译对应服务，输出到bin目录，自动带系统exe后缀
-		go build -o $(OUTPUT_DIR)/$$svc$(EXE_SUFFIX) cmd/$$svc/main.go; \
-	done
-	@echo "✅ 全部服务编译完成，输出至 bin/"
+	@echo 编译 gateway ...
+	@go build -o $(OUTPUT_DIR)/gateway$(EXE_SUFFIX) cmd/gateway/main.go
+	@echo 编译 login ...
+	@go build -o $(OUTPUT_DIR)/login$(EXE_SUFFIX) cmd/login/main.go
+	@echo 编译 game ...
+	@go build -o $(OUTPUT_DIR)/game$(EXE_SUFFIX) cmd/game/main.go
+	@echo 全部服务编译完成，输出至 bin/
 
 # ====================== 2. 单独编译某一个服务 ======================
 # 使用示例：make build-svc SERVICE=game

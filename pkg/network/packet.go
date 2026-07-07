@@ -15,6 +15,7 @@ type Packet struct {
 	MsgID uint16
 
 	// SeqID 消息序列号，用于请求-响应匹配和消息排序，uint16 占 2 字节
+	// 一般客户端发来，服务端回复时会使用相同的 SeqID
 	SeqID uint16
 
 	// Body 消息体，实际业务数据

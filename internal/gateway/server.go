@@ -11,29 +11,13 @@ import (
 )
 
 // GatewayServer WebSocket 网关服务器。
-//
-// 作为游戏服务端的入口，负责：
-//  1. 监听 HTTP 请求
-//  2. 将 /ws 路径的请求升级为 WebSocket 长连接
-//  3. 创建 Session 管理每个客户端的消息收发
-//  4. 管理所有在线会话的生命周期
-//
-// 每个客户端连接都会在独立的 goroutine 中处理，互不影响。
 type GatewayServer struct {
-	// listenAddr 监听地址，格式如 ":8080"
-	// 冒号开头表示监听所有网卡，端口号由配置决定
-	listenAddr string
-
-	// upgrader WebSocket 升级器，负责将 HTTP 请求升级为 WebSocket 连接
-	// 包含缓冲区大小、跨域检查等配置
-	upgrader *websocket.Upgrader
-
-	// httpServer HTTP 服务实例，用于启动和优雅关闭
-	httpServer *http.Server
+	listenAddr string              // listenAddr 监听地址，格式如 ":8080"
+	upgrader   *websocket.Upgrader // WebSocket升级器，将 HTTP 请求升级为 WebSocket 连接
+	httpServer *http.Server        // HTTP 服务实例，用于启动和优雅关闭
 }
 
 // NewGatewayServer 创建网关服务器实例。
-//
 // 参数：
 //   - listenAddr: 监听地址，格式如 ":8080"
 //
@@ -69,13 +53,8 @@ func NewGatewayServer(listenAddr string) *GatewayServer {
 }
 
 // Start 启动网关服务器。
-//
 // 创建 HTTP 多路复用器（mux），注册 /ws 路由，然后启动 HTTP 服务。
 // 该方法会阻塞当前 goroutine，直到服务器关闭或出错。
-//
-// 返回值：
-//   - error: 启动失败时返回错误，正常关闭返回 nil
-//
 // 使用示例：
 //
 //	server := NewGatewayServer(":8080")
@@ -89,6 +68,7 @@ func (s *GatewayServer) Start() error {
 
 	// 注册 /ws 路由，指定处理函数为 handleConnection
 	// 当客户端请求 ws://localhost:8080/ws 时，会调用 handleConnection
+	// 本质是给每个连进来的客户端创建一个 goroutine 来处理连接请求
 	mux.HandleFunc("/ws", s.handleConnection)
 
 	// 创建 HTTP 服务实例
@@ -110,14 +90,10 @@ func (s *GatewayServer) Start() error {
 }
 
 // Stop 优雅关闭网关服务器。
-//
 // 使用 http.Server.Shutdown 实现优雅关闭：
 //  1. 停止接受新的连接
 //  2. 等待已有的连接处理完当前请求
 //  3. 最多等待 5 秒，超时后强制关闭
-//
-// 返回值：
-//   - error: 关闭失败时返回错误，正常关闭返回 nil
 //
 // 使用示例：
 //
@@ -164,8 +140,6 @@ func (s *GatewayServer) Stop() error {
 // handleConnection 处理 WebSocket 连接请求。
 //
 // 这是 /ws 路由的处理函数，每个新的 WebSocket 连接都会创建一个 goroutine
-// 来执行这个函数。
-//
 // 执行流程：
 //  1. 将 HTTP 请求升级为 WebSocket 连接
 //  2. 创建 Session 管理该连接

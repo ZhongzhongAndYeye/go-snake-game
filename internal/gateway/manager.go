@@ -71,6 +71,7 @@ func (m *SessionManager) AddSession(s *Session) uint64 {
 //   - 客户端主动断开连接
 //   - 心跳超时被踢下线
 //   - 服务端主动关闭（如踢号、封号）
+//
 // 注意：RemoveSession 只会从管理器中移除记录，不会关闭会话本身。
 // 调用方需要先调用 session.Stop() 关闭连接和 goroutine。
 func (m *SessionManager) RemoveSession(sessionID uint64) {

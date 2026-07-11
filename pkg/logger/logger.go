@@ -85,6 +85,9 @@ func InitLogger(cfg config.LogConfig) error {
 // Debug 输出调试级别日志，常用于开发阶段排查问题
 // 用法：logger.Debug("连接建立", "remote_addr", "127.0.0.1:8080")
 func Debug(msg string, fields ...interface{}) {
+	if Log == nil {
+		return
+	}
 	// Debugw 为 SugaredLogger 的键值对方法，输出格式："msg"="连接建立" "remote_addr"="127.0.0.1:8080"
 	Log.Debugw(msg, fields...)
 }
@@ -92,18 +95,27 @@ func Debug(msg string, fields ...interface{}) {
 // Info 输出信息级别日志，记录服务正常运行的关键节点
 // 用法：logger.Info("服务启动", "port", 8080)
 func Info(msg string, fields ...interface{}) {
+	if Log == nil {
+		return
+	}
 	Log.Infow(msg, fields...)
 }
 
 // Warn 输出警告级别日志，表示潜在问题但不影响当前流程
 // 用法：logger.Warn("心跳超时", "timeout_sec", 60)
 func Warn(msg string, fields ...interface{}) {
+	if Log == nil {
+		return
+	}
 	Log.Warnw(msg, fields...)
 }
 
 // Error 输出错误级别日志，记录影响业务执行的错误
 // 用法：logger.Error("数据库连接失败", "err", err)
 func Error(msg string, fields ...interface{}) {
+	if Log == nil {
+		return
+	}
 	Log.Errorw(msg, fields...)
 }
 
@@ -114,6 +126,9 @@ func Error(msg string, fields ...interface{}) {
 //	traceLog.Info("用户登录", "uid", 1001)
 //	traceLog.Info("开始匹配", "mode", "rank")
 func WithTraceID(traceID string) *zap.SugaredLogger {
+	if Log == nil {
+		return nil
+	}
 	// With 方法返回一个携带固定字段的新 SugaredLogger，不修改原实例
 	return Log.With("trace_id", traceID)
 }

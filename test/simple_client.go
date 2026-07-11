@@ -1,21 +1,23 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"flag"
 	"fmt"
+	"go-snake-game/pkg/network"
 	"log"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
 
 var (
-	addr = flag.String("addr", "127.0.0.1:8080", "服务端地址")
-
-	// 添加命令行 -n后是连接数设置 不写默认为1
+	addr      = flag.String("addr", "127.0.0.1:8080", "服务端地址")
 	connCount = flag.Int("n", 1, "连接数")
 )
 
@@ -49,7 +51,6 @@ func main() {
 
 			defer func() {
 				mu.Lock()
-				// 删除连接组中的当前连接
 				for j, c := range conns {
 					if c == conn {
 						conns = append(conns[:j], conns[j+1:]...)
@@ -57,21 +58,66 @@ func main() {
 					}
 				}
 				mu.Unlock()
-
-				// 双保险，若是主函数已经关闭一次了，关闭函数的幂等的，重复关闭也不会报错
-				// 若是是因为conn网络异常等其他原因导致的ReadMessage出错，这里也可以优雅的关闭连接
 				conn.Close()
 				log.Printf("[连接-%d] 连接已关闭", id)
 			}()
 
+			done := make(chan struct{})
+
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				defer close(done)
+
+				for {
+					_, message, err := conn.ReadMessage()
+					if err != nil {
+						log.Printf("[连接-%d] 读取消息失败: %v", id, err)
+						return
+					}
+
+					reader := bufio.NewReader(bytes.NewReader(message))
+					pkt, err := network.Decode(reader)
+					if err != nil {
+						log.Printf("[连接-%d] 解码消息失败: %v", id, err)
+						continue
+					}
+
+					log.Printf("[连接-%d] 收到服务端响应: msgID=%d, seqID=%d, body_len=%d",
+						id, pkt.MsgID, pkt.SeqID, len(pkt.Body))
+				}
+			}()
+
+			heartbeatTicker := time.NewTicker(10 * time.Second)
+			defer heartbeatTicker.Stop()
+
+			var seqID uint16 = 0
+
 			for {
-				// 主函数关闭连接后，ReadMessage会返回错误，这里就会return
-				_, message, err := conn.ReadMessage()
-				if err != nil {
-					log.Printf("[连接-%d] 读取消息失败: %v", id, err)
+				select {
+				case <-heartbeatTicker.C:
+					seqID++
+					// data, err := network.Encode(network.MsgIDHeartbeatReq, seqID, nil)
+
+					// 测试 发一条不存在的消息id，看会不会报错
+					data, err := network.Encode(12138, seqID, nil)
+					if err != nil {
+						log.Printf("[连接-%d] 编码心跳消息失败: %v", id, err)
+						continue
+					}
+
+					err = conn.WriteMessage(websocket.BinaryMessage, data)
+					if err != nil {
+						log.Printf("[连接-%d] 发送心跳失败: %v", id, err)
+						return
+					}
+					log.Printf("[连接-%d] 发送心跳请求: msgID=%d, seqID=%d",
+						id, network.MsgIDHeartbeatReq, seqID)
+
+				case <-done:
+					log.Printf("[连接-%d] 读goroutine退出，停止发送心跳", id)
 					return
 				}
-				log.Printf("[连接-%d] 收到消息: %d 字节", id, len(message))
 			}
 		}(i + 1)
 	}
@@ -87,6 +133,6 @@ func main() {
 	}
 	mu.Unlock()
 
-	wg.Wait() // 所有协程结束前，阻塞在此，防止连接还没关完主函数就结束了
+	wg.Wait()
 	log.Println("所有连接已关闭")
 }

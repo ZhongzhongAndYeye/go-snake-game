@@ -8,6 +8,8 @@ import (
 	"go-snake-game/pkg/network"
 )
 
+// 【session 管理器】
+
 // 全局单例相关变量
 var (
 	// globalManager 全局 SessionManager 实例，包内所有代码共用
@@ -124,7 +126,6 @@ func (m *SessionManager) Range(fn func(sessionID uint64, s *Session) bool) {
 // 通过 Range 遍历所有会话，对每个会话调用 Send 方法发送消息。
 // Send 是非阻塞的，如果某个会话的写通道满了会自动丢弃该消息，
 // 不会影响其他会话的广播。
-
 func (m *SessionManager) Broadcast(pkt *network.Packet) {
 	m.sessions.Range(func(_, val interface{}) bool {
 		s := val.(*Session)

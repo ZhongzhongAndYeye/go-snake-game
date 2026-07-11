@@ -12,6 +12,8 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// 【会话结构】
+
 // Session 玩家会话，管理与客户端的 WebSocket 连接。
 // 每个连接对应一个 Session，负责消息的读写和心跳维护。
 type Session struct {
@@ -23,6 +25,8 @@ type Session struct {
 	readCh  chan *network.Packet // 读通道：接收客户端消息（缓冲 1024）
 	writeCh chan *network.Packet // 写通道：发送消息给客户端（缓冲 1024）
 
+	router *Router // 消息路由器，用于分发消息到对应的处理函数
+
 	// sync.Once ：保证一段代码只执行一次，无论被调用多少次。
 	closeOnce sync.Once     // 确保 Stop 只执行一次
 	writeMu   sync.Mutex    // 写锁：防止conn.WriteMessage正在写，conn.Close把连接关了 conn.WriteMessage的协程panic
@@ -31,7 +35,8 @@ type Session struct {
 
 // NewSession 创建新的玩家会话。
 // conn 是已建立的 WebSocket 连接。
-func NewSession(conn *websocket.Conn) *Session {
+// router 是消息路由器，用于分发消息到对应的处理函数。
+func NewSession(conn *websocket.Conn, router *Router) *Session {
 	return &Session{
 		conn:          conn,
 		playerID:      0,
@@ -39,6 +44,7 @@ func NewSession(conn *websocket.Conn) *Session {
 		lastHeartbeat: time.Now(),
 		readCh:        make(chan *network.Packet, 1024),
 		writeCh:       make(chan *network.Packet, 1024),
+		router:        router,
 		stopCh:        make(chan struct{}),
 	}
 }
@@ -79,7 +85,7 @@ func (s *Session) Stop() {
 	})
 }
 
-// readLoop 读 goroutine：循环从 WebSocket 读取消息，放入 readCh。
+// readLoop 读 goroutine：循环从 WebSocket 读取消息，通过路由器分发处理。
 func (s *Session) readLoop() {
 	defer func() {
 		logger.Debug("读 goroutine 退出", "session_id", s.sessionID())
@@ -114,11 +120,32 @@ func (s *Session) readLoop() {
 		// 更新心跳时间
 		s.lastHeartbeat = time.Now()
 
-		// 将解码后的消息放入读通道
+		// 通过路由器分发消息到对应的处理函数
+		// 只有连接断开才退出读循环，消息处理失败不影响读循环继续运行
+		if s.router != nil {
+			err = s.router.Handle(s, pkt)
+			if err != nil {
+				// 路由失败（找不到消息 ID），自动返回错误响应给客户端
+				logger.Warn("路由消息失败",
+					"session_id", s.sessionID(),
+					"msg_id", pkt.MsgID,
+					"error", err.Error(),
+				)
+				s.SendError(ErrCodeMsgNotFound, "未知消息类型")
+			}
+		} else {
+			logger.Warn("路由器未初始化，丢弃消息",
+				"session_id", s.sessionID(),
+				"msg_id", pkt.MsgID,
+			)
+		}
+
+		// 检查停止信号
 		select {
-		case s.readCh <- pkt:
-		case <-s.stopCh: // 停止信号，退出读 goroutine
+		case <-s.stopCh:
 			return
+		default:
+			// 没有停止信号，继续循环接收消息
 		}
 	}
 }

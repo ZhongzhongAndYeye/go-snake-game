@@ -6,15 +6,19 @@ import (
 	"time"
 
 	"go-snake-game/pkg/logger"
+	"go-snake-game/pkg/network"
 
 	"github.com/gorilla/websocket"
 )
+
+// 【网关服务器启动模块】
 
 // GatewayServer WebSocket 网关服务器。
 type GatewayServer struct {
 	listenAddr string              // listenAddr 监听地址，格式如 ":8080"
 	upgrader   *websocket.Upgrader // WebSocket升级器，将 HTTP 请求升级为 WebSocket 连接
 	httpServer *http.Server        // HTTP 服务实例，用于启动和优雅关闭
+	router     *Router             // 消息路由器，用于分发客户端消息到对应的处理函数
 }
 
 // NewGatewayServer 创建网关服务器实例。
@@ -30,8 +34,16 @@ type GatewayServer struct {
 //   - CheckOrigin: 返回 true 表示允许所有跨域请求
 //     （生产环境建议根据实际域名配置白名单）
 func NewGatewayServer(listenAddr string) *GatewayServer {
+	// 创建消息路由器（自动挂载日志中间件）
+	router := NewRouter()
+
+	// 注册消息处理函数
+	// 心跳请求（MsgID=1001）→ HeartbeatHandler
+	router.Register(network.MsgIDHeartbeatReq, HeartbeatHandler)
+
 	return &GatewayServer{
 		listenAddr: listenAddr,
+		router:     router,
 		// 配置 WebSocket 升级器
 		upgrader: &websocket.Upgrader{
 			// 读缓冲区大小：4096 字节（4KB）
@@ -174,7 +186,8 @@ func (s *GatewayServer) handleConnection(w http.ResponseWriter, r *http.Request)
 
 	// 第二步：创建 Session，封装 WebSocket 连接
 	// Session 负责管理消息的读写和心跳维护
-	session := NewSession(conn)
+	// 将路由器传给 Session，用于消息分发
+	session := NewSession(conn, s.router)
 
 	// 第三步：将 Session 加入全局管理器
 	// 管理器会分配一个唯一的会话 ID，并保存到 sync.Map 中

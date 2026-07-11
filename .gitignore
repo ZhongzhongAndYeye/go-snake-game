@@ -30,3 +30,11 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# Windows special device files
+nul
+con
+prn
+aux
+com[1-9]
+lpt[1-9]

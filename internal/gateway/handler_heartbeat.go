@@ -21,7 +21,7 @@ func HeartbeatHandler(s *Session, packet *network.Packet) {
 
 	// 记录心跳日志（Debug级别，开发调试时使用）
 	logger.Debug("收到心跳",
-		"session_id", s.sessionID(),
+		"session_id", s.logID(),
 		"player_id", s.playerID,
 		"seq_id", packet.SeqID,
 	)

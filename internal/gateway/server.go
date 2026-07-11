@@ -202,10 +202,6 @@ func (s *GatewayServer) handleConnection(w http.ResponseWriter, r *http.Request)
 	// 当 Session.Stop() 被调用时，stopCh 会被关闭，这里会解除阻塞
 	<-session.stopCh
 
-	// 第六步：会话结束后，从管理器移除
-	// 这会从 sync.Map 中删除该会话，并更新在线人数
-	GetManager().RemoveSession(sessionID)
-
 	// 记录连接断开日志
 	logger.Info("客户端连接断开",
 		"remote", conn.RemoteAddr(), // 客户端地址

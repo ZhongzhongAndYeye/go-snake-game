@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"bufio"
+	"fmt"
 	"net"
 	"sync"
 	"time"
@@ -19,6 +20,7 @@ import (
 type Session struct {
 	conn          *websocket.Conn // WebSocket 连接
 	playerID      uint64          // 玩家 ID（登录后赋值，未登录为 0）
+	sessionID     uint64          // 会话 ID（由 SessionManager 分配）
 	isOnline      bool            // 是否在线
 	lastHeartbeat time.Time       // 最后心跳时间
 
@@ -53,42 +55,48 @@ func NewSession(conn *websocket.Conn, router *Router) *Session {
 func (s *Session) Start() {
 	logger.Info("会话启动",
 		"remote", s.conn.RemoteAddr(),
-		"session_id", s.sessionID(),
+		"session_id", s.logID(),
 	)
 
 	go s.readLoop()  // 启动读 goroutine
 	go s.writeLoop() // 启动写 goroutine
 }
 
-// Stop 优雅关闭会话：关闭连接、通道，标记离线。
+// Stop 优雅关闭会话：关闭连接、通道，标记离线，并从管理器中移除自身。
 // 安全地多次调用（sync.Once 保证只执行一次）。
+// 执行顺序：标记离线 → 通知读写协程退出 → 关闭写通道 → 关闭连接 → 从管理器移除
 func (s *Session) Stop() {
 	s.closeOnce.Do(func() {
 		logger.Info("会话关闭",
 			"player_id", s.playerID,
-			"session_id", s.sessionID(),
+			"session_id", s.logID(),
 		)
 
-		// 标记离线
+		// 1. 标记离线
 		s.isOnline = false
 
-		// 发送停止信号，通知读写 goroutine 退出
+		// 2. 发送停止信号，通知读写 goroutine 退出
 		close(s.stopCh)
 
-		// 关闭写通道，writeLoop 收到 nil 后退出
+		// 3. 关闭写通道，writeLoop 收到 nil 后退出
 		close(s.writeCh)
 
-		// 关闭 WebSocket 连接
+		// 4. 关闭 WebSocket 连接
 		s.writeMu.Lock()
 		s.conn.Close()
 		s.writeMu.Unlock()
+
+		// 5. 从 SessionManager 中移除自身
+		if s.sessionID > 0 {
+			GetManager().RemoveSession(s.sessionID)
+		}
 	})
 }
 
 // readLoop 读 goroutine：循环从 WebSocket 读取消息，通过路由器分发处理。
 func (s *Session) readLoop() {
 	defer func() {
-		logger.Debug("读 goroutine 退出", "session_id", s.sessionID())
+		logger.Debug("读 goroutine 退出", "session_id", s.logID())
 	}()
 
 	for {
@@ -97,7 +105,7 @@ func (s *Session) readLoop() {
 		if err != nil {
 			// 连接关闭或读取异常，停止会话
 			logger.Error("读取消息失败",
-				"session_id", s.sessionID(),
+				"session_id", s.logID(),
 				"error", err.Error(),
 			)
 			s.Stop()
@@ -111,7 +119,7 @@ func (s *Session) readLoop() {
 		pkt, err := network.Decode(reader)
 		if err != nil {
 			logger.Error("解码消息失败",
-				"session_id", s.sessionID(),
+				"session_id", s.logID(),
 				"error", err.Error(),
 			)
 			continue
@@ -127,7 +135,7 @@ func (s *Session) readLoop() {
 			if err != nil {
 				// 路由失败（找不到消息 ID），自动返回错误响应给客户端
 				logger.Warn("路由消息失败",
-					"session_id", s.sessionID(),
+					"session_id", s.logID(),
 					"msg_id", pkt.MsgID,
 					"error", err.Error(),
 				)
@@ -135,7 +143,7 @@ func (s *Session) readLoop() {
 			}
 		} else {
 			logger.Warn("路由器未初始化，丢弃消息",
-				"session_id", s.sessionID(),
+				"session_id", s.logID(),
 				"msg_id", pkt.MsgID,
 			)
 		}
@@ -153,7 +161,7 @@ func (s *Session) readLoop() {
 // writeLoop 写 goroutine：循环从 writeCh 取消息，写入 WebSocket 连接。
 func (s *Session) writeLoop() {
 	defer func() {
-		logger.Debug("写 goroutine 退出", "session_id", s.sessionID())
+		logger.Debug("写 goroutine 退出", "session_id", s.logID())
 	}()
 
 	for {
@@ -168,7 +176,7 @@ func (s *Session) writeLoop() {
 			data, err := network.Encode(pkt.MsgID, pkt.SeqID, pkt.Body)
 			if err != nil {
 				logger.Error("编码消息失败",
-					"session_id", s.sessionID(),
+					"session_id", s.logID(),
 					"msg_id", pkt.MsgID,
 					"error", err.Error(),
 				)
@@ -182,7 +190,7 @@ func (s *Session) writeLoop() {
 
 			if err != nil {
 				logger.Error("写入消息失败",
-					"session_id", s.sessionID(),
+					"session_id", s.logID(),
 					"msg_id", pkt.MsgID,
 					"error", err.Error(),
 				)
@@ -246,8 +254,12 @@ func (s *Session) RemoteAddr() net.Addr {
 	return s.conn.RemoteAddr()
 }
 
-// sessionID 生成会话标识，用于日志追踪。
-func (s *Session) sessionID() string {
+// logID 生成会话标识，用于日志追踪。
+// 包含会话 ID 和客户端地址，便于区分不同连接。
+func (s *Session) logID() string {
+	if s.sessionID > 0 {
+		return fmt.Sprintf("%d@%s", s.sessionID, s.conn.RemoteAddr().String())
+	}
 	return s.conn.RemoteAddr().String()
 }
 

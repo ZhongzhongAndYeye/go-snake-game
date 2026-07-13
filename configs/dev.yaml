@@ -20,7 +20,7 @@ game:
 
 # MySQL 数据库
 mysql:
-  dsn: "root:root@tcp(127.0.0.1:3306)/snake_game?charset=utf8mb4&parseTime=True&loc=Local"
+  dsn: "root:11367751pp@tcp(127.0.0.1:3306)/snake_game?charset=utf8mb4&parseTime=True&loc=Local"
   max_open: 20          # 最大连接数
   max_idle: 5           # 最大空闲连接数
   max_life_minutes: 30  # 连接最大存活时间（分钟）
@@ -30,3 +30,10 @@ redis:
   addr: "127.0.0.1:6379"   # Redis 地址
   db: 0                     # 使用的数据库编号
   password: ""              # 密码，为空表示无密码
+  pool_size: 20             # 连接池最大连接数
+  min_idle_conns: 5         # 最小空闲连接数
+  max_retries: 3            # 操作失败最大重试次数
+  dial_timeout: 5           # 连接超时（秒）
+  read_timeout: 3           # 读超时（秒）
+  write_timeout: 3          # 写超时（秒）
+  pool_timeout: 4           # 从连接池获取连接的超时时间（秒）

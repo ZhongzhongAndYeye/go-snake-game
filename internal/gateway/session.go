@@ -194,7 +194,7 @@ func (s *Session) writeLoop() {
 					"msg_id", pkt.MsgID,
 					"error", err.Error(),
 				)
-				s.Stop()
+				s.Stop() // 若是出错了 stop这个会话以及连接（这时候也会关闭写通道）
 				return
 			}
 

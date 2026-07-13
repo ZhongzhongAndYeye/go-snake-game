@@ -43,7 +43,14 @@ type MysqlConfig struct {
 
 // RedisConfig Redis 缓存配置
 type RedisConfig struct {
-	Addr     string `mapstructure:"addr"`     // Redis 地址
-	DB       int    `mapstructure:"db"`       // 使用的数据库编号
-	Password string `mapstructure:"password"` // 密码，为空表示无密码
+	Addr         string `mapstructure:"addr"`           // Redis 地址
+	DB           int    `mapstructure:"db"`             // 使用的数据库编号
+	Password     string `mapstructure:"password"`       // 密码，为空表示无密码
+	PoolSize     int    `mapstructure:"pool_size"`      // 连接池最大连接数
+	MinIdleConns int    `mapstructure:"min_idle_conns"` // 最小空闲连接数
+	MaxRetries   int    `mapstructure:"max_retries"`    // 操作失败最大重试次数
+	DialTimeout  int    `mapstructure:"dial_timeout"`   // 连接超时（秒）
+	ReadTimeout  int    `mapstructure:"read_timeout"`   // 读超时（秒）
+	WriteTimeout int    `mapstructure:"write_timeout"`  // 写超时（秒）
+	PoolTimeout  int    `mapstructure:"pool_timeout"`   // 从连接池获取连接的超时时间（秒）
 }

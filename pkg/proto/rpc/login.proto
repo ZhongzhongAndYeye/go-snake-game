@@ -1,0 +1,57 @@
+// 登录服务 protobuf 定义
+// 包含注册、登录、Token 校验三个 RPC 接口
+
+syntax = "proto3";
+
+package rpc;
+option go_package = "pkg/proto/rpc;rpc";
+
+// LoginService 登录服务，处理玩家注册、登录和 Token 校验。
+service LoginService {
+  // Register 注册账号
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  // Login 账号登录
+  rpc Login(LoginRequest) returns (LoginResponse);
+  // VerifyToken 校验 Token
+  rpc VerifyToken(VerifyTokenRequest) returns (VerifyTokenResponse);
+}
+
+// RegisterRequest 注册请求
+message RegisterRequest {
+  string username = 1; // 用户名，3-32 位
+  string password = 2; // 密码，6-32 位
+}
+
+// RegisterResponse 注册响应
+message RegisterResponse {
+  int32  code      = 1; // 业务状态码，0 成功，非 0 失败
+  string msg       = 2; // 提示信息
+  uint64 player_id = 3; // 玩家 ID，注册成功时返回
+}
+
+// LoginRequest 登录请求
+message LoginRequest {
+  string username = 1; // 用户名
+  string password = 2; // 密码
+}
+
+// LoginResponse 登录响应
+message LoginResponse {
+  int32  code      = 1; // 业务状态码，0 成功，非 0 失败
+  string msg       = 2; // 提示信息
+  uint64 player_id = 3; // 玩家 ID
+  string nickname  = 4; // 玩家昵称
+  string token     = 5; // 登录 Token，有效期 7 天
+}
+
+// VerifyTokenRequest 校验 Token 请求
+message VerifyTokenRequest {
+  string token = 1; // 待校验的 Token
+}
+
+// VerifyTokenResponse 校验 Token 响应
+message VerifyTokenResponse {
+  int32  code      = 1; // 业务状态码，0 成功，非 0 失败
+  string msg       = 2; // 提示信息
+  uint64 player_id = 3; // 玩家 ID，Token 有效时返回
+}

@@ -14,7 +14,7 @@ ifeq ($(OS),Windows_NT)
 	# Windows 可执行文件后缀 .exe
 	EXE_SUFFIX = .exe
 	# Windows 创建文件夹命令（忽略已存在错误）
-	MKDIR = mkdir 2>nul || exit 0
+	MKDIR = -mkdir
 else
 	# Mac / Linux 系统：递归强制删除文件夹
 	RM = rm -rf

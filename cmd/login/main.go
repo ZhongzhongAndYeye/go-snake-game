@@ -2,9 +2,18 @@ package main
 
 import (
 	"log"
+	"net"
+	"os"
+	"os/signal"
+	"syscall"
 
+	"go-snake-game/internal/login"
 	"go-snake-game/pkg/config"
+	"go-snake-game/pkg/db"
 	"go-snake-game/pkg/logger"
+	pb "go-snake-game/pkg/proto/rpc"
+
+	"google.golang.org/grpc"
 )
 
 func main() {
@@ -18,6 +27,57 @@ func main() {
 		log.Fatalf("初始化日志失败: %v", err)
 	}
 
-	// 3. 打印登录服启动信息，携带 gRPC 监听地址字段
-	logger.Info("登录服启动成功", "grpc_addr", config.GlobalCfg.Login.GrpcAddr)
+	// 3. 初始化 MySQL
+	db.InitMySQL(&db.MySQLConfig{
+		DSN:            config.GlobalCfg.Mysql.DSN,
+		MaxOpen:        config.GlobalCfg.Mysql.MaxOpen,
+		MaxIdle:        config.GlobalCfg.Mysql.MaxIdle,
+		MaxLifeMinutes: config.GlobalCfg.Mysql.MaxLifeMinutes,
+	})
+
+	// 4. 初始化 Redis
+	db.InitRedis(&db.RedisConfig{
+		Addr:         config.GlobalCfg.Redis.Addr,
+		DB:           config.GlobalCfg.Redis.DB,
+		Password:     config.GlobalCfg.Redis.Password,
+		PoolSize:     config.GlobalCfg.Redis.PoolSize,
+		MinIdleConns: config.GlobalCfg.Redis.MinIdleConns,
+		MaxRetries:   config.GlobalCfg.Redis.MaxRetries,
+		DialTimeout:  config.GlobalCfg.Redis.DialTimeout,
+		ReadTimeout:  config.GlobalCfg.Redis.ReadTimeout,
+		WriteTimeout: config.GlobalCfg.Redis.WriteTimeout,
+		PoolTimeout:  config.GlobalCfg.Redis.PoolTimeout,
+	})
+
+	// 5. 创建 gRPC 服务并注册 LoginService
+	grpcServer := grpc.NewServer()
+	loginServer := login.NewLoginServer()
+	pb.RegisterLoginServiceServer(grpcServer, loginServer)
+
+	// 6. 监听配置中的 gRPC 地址
+	grpcAddr := config.GlobalCfg.Login.GrpcAddr
+	lis, err := net.Listen("tcp", grpcAddr)
+	if err != nil {
+		logger.Error("登录服监听失败", "grpc_addr", grpcAddr, "error", err.Error())
+		os.Exit(1)
+	}
+
+	// 7. 捕获系统信号，优雅停止
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+
+	// 启动 gRPC 服务
+	go func() {
+		logger.Info("登录服启动成功", "grpc_addr", grpcAddr)
+		if err := grpcServer.Serve(lis); err != nil {
+			logger.Error("登录服启动失败", "error", err.Error())
+			os.Exit(1)
+		}
+	}()
+
+	// 8. 等待信号，优雅停止
+	<-stop
+	logger.Info("登录服正在关闭")
+	grpcServer.GracefulStop()
+	logger.Info("登录服已关闭")
 }

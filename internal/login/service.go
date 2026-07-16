@@ -138,10 +138,10 @@ func (s *LoginService) VerifyToken(token string) (uint64, error) {
 	playerID, err := utils.VerifyToken(token)
 	if err != nil {
 		if errors.Is(err, utils.ErrTokenNotFound) {
-			logger.Warn("token not found", "token", maskToken(token))
+			logger.Warn("token not found", "token", token)
 			return 0, err
 		}
-		logger.Error("failed to verify token", "token", maskToken(token), "error", err)
+		logger.Error("failed to verify token", "token", token, "error", err)
 		return 0, err
 	}
 
@@ -176,13 +176,4 @@ func validatePassword(password string) error {
 		return ErrPasswordTooLong
 	}
 	return nil
-}
-
-// maskToken 对 Token 进行脱敏处理，保护日志中的敏感信息。
-// 例如：abcd1234efgh5678 → abcd***5678
-func maskToken(token string) string {
-	if len(token) <= 8 {
-		return "***"
-	}
-	return token[:4] + "***" + token[len(token)-4:]
 }

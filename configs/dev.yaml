@@ -7,6 +7,7 @@ log:
 # 网关服务 — WebSocket 接入层
 gateway:
   listen_addr: "0.0.0.0:8080"   # WebSocket 监听地址
+  login_rpc_addr: "127.0.0.1:9001"  # 登录服 gRPC 地址
   heartbeat_timeout: 60          # 心跳超时（秒），超时断开连接
 
 # 登录服 

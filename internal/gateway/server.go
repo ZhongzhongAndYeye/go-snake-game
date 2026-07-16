@@ -37,9 +37,13 @@ func NewGatewayServer(listenAddr string) *GatewayServer {
 	// 创建消息路由器（自动挂载日志中间件）
 	router := NewRouter()
 
-	// 注册消息处理函数
-	// 心跳请求（MsgID=1001）→ HeartbeatHandler
-	router.Register(network.MsgIDHeartbeatReq, HeartbeatHandler)
+	// 注册免鉴权消息处理函数（不经过 AuthMiddleware）
+	router.RegisterPublic(network.MsgIDHeartbeatReq, HeartbeatHandler) // 1001：客户端定期发送，保持连接
+	router.RegisterPublic(network.MsgIDRegisterReq, RegisterHandler)   // 1006：新用户注册账号
+	router.RegisterPublic(network.MsgIDLoginReq, LoginHandler)         // 1003：用户登录获取 Token
+
+	// 游戏业务消息（如匹配、移动）后续使用 router.Register() 注册，
+	// 这些消息会经过 AuthMiddleware 鉴权中间件
 
 	return &GatewayServer{
 		listenAddr: listenAddr,

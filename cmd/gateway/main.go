@@ -23,9 +23,15 @@ func main() {
 		log.Fatalf("初始化日志失败: %v", err)
 	}
 
-	// 3. 启动监听服务
+	// 3. 初始化登录服 gRPC 客户端
+	// 地址从配置文件读取，不硬编码
+	loginRpcAddr := config.GlobalCfg.Gateway.LoginRpcAddr
+	logger.Info("初始化登录服 gRPC 连接", "addr", loginRpcAddr)
+	gateway.InitLoginRpcClient(loginRpcAddr)
+
+	// 4. 启动 WebSocket 监听服务
 	listenAddr := config.GlobalCfg.Gateway.ListenAddr
-	logger.Info("网关服务启动成功", "listen_addr", listenAddr)
+	logger.Info("网关服务启动", "listen_addr", listenAddr)
 
 	server := gateway.NewGatewayServer(listenAddr)
 

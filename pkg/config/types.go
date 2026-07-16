@@ -20,6 +20,7 @@ type LogConfig struct {
 // GatewayConfig 网关服务 — WebSocket 接入层
 type GatewayConfig struct {
 	ListenAddr       string `mapstructure:"listen_addr"`       // WebSocket 监听地址
+	LoginRpcAddr     string `mapstructure:"login_rpc_addr"`    // 登录服 gRPC 地址
 	HeartbeatTimeout int    `mapstructure:"heartbeat_timeout"` // 心跳超时（秒），超时断开连接
 }
 

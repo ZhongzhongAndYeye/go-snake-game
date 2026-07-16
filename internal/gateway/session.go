@@ -17,11 +17,13 @@ import (
 
 // Session 玩家会话，管理与客户端的 WebSocket 连接。
 // 每个连接对应一个 Session，负责消息的读写和心跳维护。
+// 客户端成功连接后，默认未登录，调用登录服的相关登录操作函数成功登录后，会话状态再更新为已登录。
 type Session struct {
 	conn          *websocket.Conn // WebSocket 连接
 	playerID      uint64          // 玩家 ID（登录后赋值，未登录为 0）
 	sessionID     uint64          // 会话 ID（由 SessionManager 分配）
 	isOnline      bool            // 是否在线
+	isLogin       bool            // 是否已登录
 	lastHeartbeat time.Time       // 最后心跳时间
 
 	readCh  chan *network.Packet // 读通道：接收客户端消息（缓冲 1024）
@@ -43,6 +45,7 @@ func NewSession(conn *websocket.Conn, router *Router) *Session {
 		conn:          conn,
 		playerID:      0,
 		isOnline:      true,
+		isLogin:       false,
 		lastHeartbeat: time.Now(),
 		readCh:        make(chan *network.Packet, 1024),
 		writeCh:       make(chan *network.Packet, 1024),
@@ -237,6 +240,11 @@ func (s *Session) PlayerID() uint64 {
 // SetPlayerID 设置玩家 ID（登录成功后调用）。
 func (s *Session) SetPlayerID(id uint64) {
 	s.playerID = id
+}
+
+// SetLogin 设置登录状态（登录成功后调用）。
+func (s *Session) SetLogin(login bool) {
+	s.isLogin = login
 }
 
 // IsOnline 返回是否在线。

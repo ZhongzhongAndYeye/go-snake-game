@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package msg;
 
-option go_package = "go-snake-game/pkg/proto/msg";
+option go_package = "pkg/proto/msg";
 
 // ---- 心跳 ----
 
@@ -26,6 +26,16 @@ message LoginResp {
   string msg       = 2; // 提示信息
   string token     = 3; // 登录令牌，后续请求携带
   int64  player_id = 4; // 玩家 ID
+}
+
+message RegisterReq {
+    string username = 1;
+    string password = 2;
+}
+message RegisterResp {
+    int32 code = 1;
+    string msg = 2;
+    uint64 player_id = 3;
 }
 
 // ---- 通用 ----

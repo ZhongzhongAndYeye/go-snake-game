@@ -17,6 +17,10 @@ const (
 	// ---- 通用错误 ----
 	MsgIDErrorResp uint16 = 1005 // 服务端 → 客户端：通用错误响应
 
+	// ---- 注册相关 ----
+	MsgIDRegisterReq  uint16 = 1006 // 客户端 → 登录服：注册请求
+	MsgIDRegisterResp uint16 = 1007 // 登录服 → 客户端：注册响应
+
 	// ---- 房间匹配相关 ----
 	MsgIDMatchReq  uint16 = 2001 // 客户端 → 游戏服：匹配请求
 	MsgIDMatchResp uint16 = 2002 // 游戏服 → 客户端：匹配响应

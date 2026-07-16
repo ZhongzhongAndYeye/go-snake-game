@@ -23,6 +23,10 @@ type Router struct {
 	// routes 路由表，key 为消息 ID（uint16），value 为处理函数
 	routes map[uint16]HandlerFunc
 
+	// publicRoutes 免鉴权路由表，key 为消息 ID（uint16），value 为处理函数
+	// 免鉴权路由不经过中间件链，直接执行 Handler
+	publicRoutes map[uint16]HandlerFunc
+
 	// middlewares 全局中间件切片，按注册顺序排列
 	middlewares []MiddlewareFunc
 }
@@ -31,8 +35,9 @@ type Router struct {
 // 默认挂载 LogMiddleware 日志中间件，自动记录每条消息的处理耗时。
 func NewRouter() *Router {
 	r := &Router{
-		routes:      make(map[uint16]HandlerFunc),
-		middlewares: make([]MiddlewareFunc, 0),
+		routes:       make(map[uint16]HandlerFunc),
+		publicRoutes: make(map[uint16]HandlerFunc),
+		middlewares:  make([]MiddlewareFunc, 0),
 	}
 	// 默认挂载日志中间件，自动记录每条消息的 msg_id、seq_id、处理耗时
 	// 同时捕获业务 Handler 的 panic，防止单个消息崩溃导致整个连接断开
@@ -40,11 +45,22 @@ func NewRouter() *Router {
 	return r
 }
 
-// Register 注册消息处理函数。
-// 将指定的 MsgID 与处理函数绑定，同一个 MsgID 重复注册会覆盖旧的处理函数。
+// Register 注册需要鉴权的消息处理函数。
+// 将指定的 MsgID 与处理函数绑定，该消息会经过中间件链（含 AuthMiddleware）处理。
+// 同一个 MsgID 重复注册会覆盖旧的处理函数。
 func (r *Router) Register(msgID uint16, handler HandlerFunc) {
 	r.routes[msgID] = handler
 	logger.Info("注册消息路由",
+		"msg_id", msgID,
+	)
+}
+
+// RegisterPublic 注册免鉴权的消息处理函数。
+// 免鉴权路由不经过中间件链，直接执行 Handler。
+// 适用于心跳、注册、登录等不需要登录即可访问的消息。
+func (r *Router) RegisterPublic(msgID uint16, handler HandlerFunc) {
+	r.publicRoutes[msgID] = handler
+	logger.Info("注册免鉴权消息路由",
 		"msg_id", msgID,
 	)
 }
@@ -79,7 +95,14 @@ func (r *Router) Use(mw MiddlewareFunc) {
 //	└── 执行：
 //	     鉴权中间件 → 日志中间件 → handleLogin → 返回
 func (r *Router) Handle(s *Session, packet *network.Packet) error {
-	// 第一步：根据 MsgID 查找路由表
+	// 第一步：优先检查免鉴权路由表
+	// 心跳(1001)、注册(1006)、登录(1003) 等免鉴权消息直接执行，不经过中间件链
+	if handler, ok := r.publicRoutes[packet.MsgID]; ok {
+		handler(s, packet)
+		return nil // 若是，直接调用指令函数，无需中间件
+	}
+
+	// 第二步：根据 MsgID 查找需要鉴权的路由表
 	handler, ok := r.routes[packet.MsgID]
 	if !ok {
 		// 找不到对应的处理函数，返回错误

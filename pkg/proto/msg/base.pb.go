@@ -382,6 +382,202 @@ func (x *ErrorResp) GetMsg() string {
 	return ""
 }
 
+// 发起匹配请求（客户端 → 游戏服）
+type MatchStartReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MatchStartReq) Reset() {
+	*x = MatchStartReq{}
+	mi := &file_pkg_proto_msg_base_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MatchStartReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MatchStartReq) ProtoMessage() {}
+
+func (x *MatchStartReq) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_msg_base_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MatchStartReq.ProtoReflect.Descriptor instead.
+func (*MatchStartReq) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_msg_base_proto_rawDescGZIP(), []int{7}
+}
+
+// 发起匹配响应（游戏服 → 客户端）
+type MatchStartResp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          int32                  `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"`                            // 业务状态码，0 成功，非 0 失败
+	Msg           string                 `protobuf:"bytes,2,opt,name=msg,proto3" json:"msg,omitempty"`                               // 提示信息
+	RoomId        string                 `protobuf:"bytes,3,opt,name=room_id,json=roomId,proto3" json:"room_id,omitempty"`           // 房间 ID，匹配成功时返回
+	IsMatched     bool                   `protobuf:"varint,4,opt,name=is_matched,json=isMatched,proto3" json:"is_matched,omitempty"` // 是否已匹配成功
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MatchStartResp) Reset() {
+	*x = MatchStartResp{}
+	mi := &file_pkg_proto_msg_base_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MatchStartResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MatchStartResp) ProtoMessage() {}
+
+func (x *MatchStartResp) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_msg_base_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MatchStartResp.ProtoReflect.Descriptor instead.
+func (*MatchStartResp) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_msg_base_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *MatchStartResp) GetCode() int32 {
+	if x != nil {
+		return x.Code
+	}
+	return 0
+}
+
+func (x *MatchStartResp) GetMsg() string {
+	if x != nil {
+		return x.Msg
+	}
+	return ""
+}
+
+func (x *MatchStartResp) GetRoomId() string {
+	if x != nil {
+		return x.RoomId
+	}
+	return ""
+}
+
+func (x *MatchStartResp) GetIsMatched() bool {
+	if x != nil {
+		return x.IsMatched
+	}
+	return false
+}
+
+// 取消匹配请求（客户端 → 游戏服）
+type MatchCancelReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MatchCancelReq) Reset() {
+	*x = MatchCancelReq{}
+	mi := &file_pkg_proto_msg_base_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MatchCancelReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MatchCancelReq) ProtoMessage() {}
+
+func (x *MatchCancelReq) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_msg_base_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MatchCancelReq.ProtoReflect.Descriptor instead.
+func (*MatchCancelReq) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_msg_base_proto_rawDescGZIP(), []int{9}
+}
+
+// 取消匹配响应（游戏服 → 客户端）
+type MatchCancelResp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          int32                  `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"` // 业务状态码，0 成功，非 0 失败
+	Msg           string                 `protobuf:"bytes,2,opt,name=msg,proto3" json:"msg,omitempty"`    // 提示信息
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MatchCancelResp) Reset() {
+	*x = MatchCancelResp{}
+	mi := &file_pkg_proto_msg_base_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MatchCancelResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MatchCancelResp) ProtoMessage() {}
+
+func (x *MatchCancelResp) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_msg_base_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MatchCancelResp.ProtoReflect.Descriptor instead.
+func (*MatchCancelResp) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_msg_base_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *MatchCancelResp) GetCode() int32 {
+	if x != nil {
+		return x.Code
+	}
+	return 0
+}
+
+func (x *MatchCancelResp) GetMsg() string {
+	if x != nil {
+		return x.Msg
+	}
+	return ""
+}
+
 var File_pkg_proto_msg_base_proto protoreflect.FileDescriptor
 
 const file_pkg_proto_msg_base_proto_rawDesc = "" +
@@ -406,6 +602,17 @@ const file_pkg_proto_msg_base_proto_rawDesc = "" +
 	"\tplayer_id\x18\x03 \x01(\x04R\bplayerId\"1\n" +
 	"\tErrorResp\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x10\n" +
+	"\x03msg\x18\x02 \x01(\tR\x03msg\"\x0f\n" +
+	"\rMatchStartReq\"n\n" +
+	"\x0eMatchStartResp\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x10\n" +
+	"\x03msg\x18\x02 \x01(\tR\x03msg\x12\x17\n" +
+	"\aroom_id\x18\x03 \x01(\tR\x06roomId\x12\x1d\n" +
+	"\n" +
+	"is_matched\x18\x04 \x01(\bR\tisMatched\"\x10\n" +
+	"\x0eMatchCancelReq\"7\n" +
+	"\x0fMatchCancelResp\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x10\n" +
 	"\x03msg\x18\x02 \x01(\tR\x03msgB\x0fZ\rpkg/proto/msgb\x06proto3"
 
 var (
@@ -420,15 +627,19 @@ func file_pkg_proto_msg_base_proto_rawDescGZIP() []byte {
 	return file_pkg_proto_msg_base_proto_rawDescData
 }
 
-var file_pkg_proto_msg_base_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_pkg_proto_msg_base_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_pkg_proto_msg_base_proto_goTypes = []any{
-	(*HeartbeatReq)(nil),  // 0: msg.HeartbeatReq
-	(*HeartbeatResp)(nil), // 1: msg.HeartbeatResp
-	(*LoginReq)(nil),      // 2: msg.LoginReq
-	(*LoginResp)(nil),     // 3: msg.LoginResp
-	(*RegisterReq)(nil),   // 4: msg.RegisterReq
-	(*RegisterResp)(nil),  // 5: msg.RegisterResp
-	(*ErrorResp)(nil),     // 6: msg.ErrorResp
+	(*HeartbeatReq)(nil),    // 0: msg.HeartbeatReq
+	(*HeartbeatResp)(nil),   // 1: msg.HeartbeatResp
+	(*LoginReq)(nil),        // 2: msg.LoginReq
+	(*LoginResp)(nil),       // 3: msg.LoginResp
+	(*RegisterReq)(nil),     // 4: msg.RegisterReq
+	(*RegisterResp)(nil),    // 5: msg.RegisterResp
+	(*ErrorResp)(nil),       // 6: msg.ErrorResp
+	(*MatchStartReq)(nil),   // 7: msg.MatchStartReq
+	(*MatchStartResp)(nil),  // 8: msg.MatchStartResp
+	(*MatchCancelReq)(nil),  // 9: msg.MatchCancelReq
+	(*MatchCancelResp)(nil), // 10: msg.MatchCancelResp
 }
 var file_pkg_proto_msg_base_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -449,7 +660,7 @@ func file_pkg_proto_msg_base_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_pkg_proto_msg_base_proto_rawDesc), len(file_pkg_proto_msg_base_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

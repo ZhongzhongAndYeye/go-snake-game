@@ -29,7 +29,12 @@ func main() {
 	logger.Info("初始化登录服 gRPC 连接", "addr", loginRpcAddr)
 	gateway.InitLoginRpcClient(loginRpcAddr)
 
-	// 4. 启动 WebSocket 监听服务
+	// 4. 初始化游戏服 gRPC 客户端
+	gameRpcAddr := config.GlobalCfg.Gateway.GameRpcAddr
+	logger.Info("初始化游戏服 gRPC 连接", "addr", gameRpcAddr)
+	gateway.InitGameRpcClient(gameRpcAddr)
+
+	// 5. 启动 WebSocket 监听服务
 	listenAddr := config.GlobalCfg.Gateway.ListenAddr
 	logger.Info("网关服务启动", "listen_addr", listenAddr)
 

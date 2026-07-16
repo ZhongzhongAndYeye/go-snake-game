@@ -42,8 +42,12 @@ func NewGatewayServer(listenAddr string) *GatewayServer {
 	router.RegisterPublic(network.MsgIDRegisterReq, RegisterHandler)   // 1006：新用户注册账号
 	router.RegisterPublic(network.MsgIDLoginReq, LoginHandler)         // 1003：用户登录获取 Token
 
-	// 游戏业务消息（如匹配、移动）后续使用 router.Register() 注册，
-	// 这些消息会经过 AuthMiddleware 鉴权中间件
+	// 注册鉴权中间件，后续 Register 的消息都会经过鉴权
+	router.Use(AuthMiddleware)
+
+	// 注册游戏业务消息（需鉴权，经过 AuthMiddleware）
+	router.Register(network.MsgIDMatchStartReq, MatchStartHandler)   // 2001：发起匹配
+	router.Register(network.MsgIDMatchCancelReq, MatchCancelHandler) // 2003：取消匹配
 
 	return &GatewayServer{
 		listenAddr: listenAddr,

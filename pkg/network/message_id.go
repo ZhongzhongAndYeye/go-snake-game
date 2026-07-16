@@ -22,6 +22,9 @@ const (
 	MsgIDRegisterResp uint16 = 1007 // 登录服 → 客户端：注册响应
 
 	// ---- 房间匹配相关 ----
-	MsgIDMatchReq  uint16 = 2001 // 客户端 → 游戏服：匹配请求
-	MsgIDMatchResp uint16 = 2002 // 游戏服 → 客户端：匹配响应
+	MsgIDMatchStartReq   uint16 = 2001 // 客户端 → 游戏服：发起匹配请求
+	MsgIDMatchStartResp  uint16 = 2002 // 游戏服 → 客户端：发起匹配响应
+	MsgIDMatchCancelReq  uint16 = 2003 // 客户端 → 游戏服：取消匹配请求
+	MsgIDMatchCancelResp uint16 = 2004 // 游戏服 → 客户端：取消匹配响应
+	MsgIDRoomInfoNotify  uint16 = 2005 // 游戏服 → 客户端：房间信息推送
 )

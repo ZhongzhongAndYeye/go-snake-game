@@ -8,12 +8,12 @@ log:
 gateway:
   listen_addr: "0.0.0.0:8080"   # WebSocket 监听地址
   login_rpc_addr: "127.0.0.1:9001"  # 登录服 gRPC 地址
+  game_rpc_addr: "127.0.0.1:9002"   # 游戏服 gRPC 地址
   heartbeat_timeout: 60          # 心跳超时（秒），超时断开连接
 
 # 登录服 
 login:
   grpc_addr: "0.0.0.0:9001"     # gRPC 服务监听地址
-
 
 # 游戏逻辑服
 game:

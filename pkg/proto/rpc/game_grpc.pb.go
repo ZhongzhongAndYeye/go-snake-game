@@ -27,6 +27,7 @@ const (
 	GameService_GetRoomInfo_FullMethodName     = "/rpc.GameService/GetRoomInfo"
 	GameService_PlayerOperation_FullMethodName = "/rpc.GameService/PlayerOperation"
 	GameService_PlayerOffline_FullMethodName   = "/rpc.GameService/PlayerOffline"
+	GameService_GetGlobalRank_FullMethodName   = "/rpc.GameService/GetGlobalRank"
 )
 
 // GameServiceClient is the client API for GameService service.
@@ -49,6 +50,9 @@ type GameServiceClient interface {
 	//   - 游戏中：标记蛇死亡，触发游戏结束判定
 	//   - 匹配中：从匹配队列移除
 	PlayerOffline(ctx context.Context, in *PlayerOfflineRequest, opts ...grpc.CallOption) (*PlayerOfflineResponse, error)
+	// GetGlobalRank 查询全服排行榜
+	// 返回 Top100 玩家排名，按分数从高到低排序。
+	GetGlobalRank(ctx context.Context, in *GetGlobalRankRequest, opts ...grpc.CallOption) (*GetGlobalRankResponse, error)
 }
 
 type gameServiceClient struct {
@@ -109,6 +113,16 @@ func (c *gameServiceClient) PlayerOffline(ctx context.Context, in *PlayerOffline
 	return out, nil
 }
 
+func (c *gameServiceClient) GetGlobalRank(ctx context.Context, in *GetGlobalRankRequest, opts ...grpc.CallOption) (*GetGlobalRankResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetGlobalRankResponse)
+	err := c.cc.Invoke(ctx, GameService_GetGlobalRank_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GameServiceServer is the server API for GameService service.
 // All implementations must embed UnimplementedGameServiceServer
 // for forward compatibility.
@@ -129,6 +143,9 @@ type GameServiceServer interface {
 	//   - 游戏中：标记蛇死亡，触发游戏结束判定
 	//   - 匹配中：从匹配队列移除
 	PlayerOffline(context.Context, *PlayerOfflineRequest) (*PlayerOfflineResponse, error)
+	// GetGlobalRank 查询全服排行榜
+	// 返回 Top100 玩家排名，按分数从高到低排序。
+	GetGlobalRank(context.Context, *GetGlobalRankRequest) (*GetGlobalRankResponse, error)
 	mustEmbedUnimplementedGameServiceServer()
 }
 
@@ -153,6 +170,9 @@ func (UnimplementedGameServiceServer) PlayerOperation(context.Context, *PlayerOp
 }
 func (UnimplementedGameServiceServer) PlayerOffline(context.Context, *PlayerOfflineRequest) (*PlayerOfflineResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method PlayerOffline not implemented")
+}
+func (UnimplementedGameServiceServer) GetGlobalRank(context.Context, *GetGlobalRankRequest) (*GetGlobalRankResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetGlobalRank not implemented")
 }
 func (UnimplementedGameServiceServer) mustEmbedUnimplementedGameServiceServer() {}
 func (UnimplementedGameServiceServer) testEmbeddedByValue()                     {}
@@ -265,6 +285,24 @@ func _GameService_PlayerOffline_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GameService_GetGlobalRank_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetGlobalRankRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GameServiceServer).GetGlobalRank(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GameService_GetGlobalRank_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GameServiceServer).GetGlobalRank(ctx, req.(*GetGlobalRankRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GameService_ServiceDesc is the grpc.ServiceDesc for GameService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -291,6 +329,10 @@ var GameService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PlayerOffline",
 			Handler:    _GameService_PlayerOffline_Handler,
+		},
+		{
+			MethodName: "GetGlobalRank",
+			Handler:    _GameService_GetGlobalRank_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

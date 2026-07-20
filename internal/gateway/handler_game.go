@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"go-snake-game/pkg/errcode"
 	"go-snake-game/pkg/logger"
 	"go-snake-game/pkg/network"
 	"go-snake-game/pkg/proto/msg"
@@ -20,7 +21,7 @@ func GameOperationHandler(s *Session, packet *network.Packet) {
 	// 校验玩家是否已登录
 	if playerID == 0 {
 		logger.Warn("游戏操作请求未登录", "session_id", s.logID())
-		s.SendError(ErrCodeNotLogin, "请先登录")
+		s.SendError(errcode.ErrNotLogin, "请先登录")
 		return
 	}
 
@@ -28,7 +29,7 @@ func GameOperationHandler(s *Session, packet *network.Packet) {
 	req := &msg.GameOperationReq{}
 	if err := proto.Unmarshal(packet.Body, req); err != nil {
 		logger.Warn("游戏操作请求解析失败", "session_id", s.logID(), "player_id", playerID, "error", err)
-		s.SendError(ErrCodeParamError, "请求参数格式错误")
+		s.SendError(errcode.ErrParam, "请求参数格式错误")
 		return
 	}
 
@@ -43,7 +44,7 @@ func GameOperationHandler(s *Session, packet *network.Packet) {
 	resp, err := GlobalGameClient.PlayerOperation(ctx, playerID, "", direction)
 	if err != nil {
 		logger.Error("调用游戏服玩家操作接口失败", "session_id", s.logID(), "player_id", playerID, "error", err)
-		s.SendError(ErrCodeSystemError, "操作失败，请稍后重试")
+		s.SendError(errcode.ErrSystem, "操作失败，请稍后重试")
 		return
 	}
 
@@ -67,7 +68,7 @@ func RoomInfoQueryHandler(s *Session, packet *network.Packet) {
 	// 校验玩家是否已登录
 	if playerID == 0 {
 		logger.Warn("房间信息查询请求未登录", "session_id", s.logID())
-		s.SendError(ErrCodeNotLogin, "请先登录")
+		s.SendError(errcode.ErrNotLogin, "请先登录")
 		return
 	}
 
@@ -88,7 +89,7 @@ func RoomInfoQueryHandler(s *Session, packet *network.Packet) {
 	resp, err := GlobalGameClient.GetRoomInfo(ctx, roomID)
 	if err != nil {
 		logger.Error("调用游戏服房间信息接口失败", "session_id", s.logID(), "player_id", playerID, "error", err)
-		s.SendError(ErrCodeSystemError, "查询房间信息失败")
+		s.SendError(errcode.ErrSystem, "查询房间信息失败")
 		return
 	}
 
@@ -96,7 +97,7 @@ func RoomInfoQueryHandler(s *Session, packet *network.Packet) {
 	body, err := proto.Marshal(resp)
 	if err != nil {
 		logger.Error("房间信息响应序列化失败", "session_id", s.logID(), "player_id", playerID, "error", err)
-		s.SendError(ErrCodeSystemError, "系统错误")
+		s.SendError(errcode.ErrSystem, "系统错误")
 		return
 	}
 
@@ -108,4 +109,60 @@ func RoomInfoQueryHandler(s *Session, packet *network.Packet) {
 	})
 
 	logger.Info("房间信息查询响应发送成功", "session_id", s.logID(), "player_id", playerID, "room_id", resp.GetRoomId(), "status", resp.GetStatus())
+}
+
+// RankQueryHandler 排行榜查询请求处理器。
+// 客户端查询全服排行榜 Top100，通过 gRPC 转发至游戏服。
+func RankQueryHandler(s *Session, packet *network.Packet) {
+	playerID := s.PlayerID()
+	logger.Info("收到排行榜查询请求", "session_id", s.logID(), "player_id", playerID, "seq_id", packet.SeqID)
+
+	// 校验玩家是否已登录（由 AuthMiddleware 保证，此处双重校验）
+	if playerID == 0 {
+		logger.Warn("排行榜查询请求未登录", "session_id", s.logID())
+		s.SendError(errcode.ErrNotLogin, "请先登录")
+		return
+	}
+
+	// 创建 gRPC 请求上下文（5秒超时）
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// 调用游戏服 gRPC 获取排行榜接口
+	resp, err := GlobalGameClient.GetGlobalRank(ctx)
+	if err != nil {
+		logger.Error("调用游戏服排行榜接口失败", "session_id", s.logID(), "player_id", playerID, "error", err)
+		s.SendError(errcode.ErrSystem, "查询排行榜失败")
+		return
+	}
+
+	// 将 rpc 响应序列化为客户端消息
+	rankResp := &msg.RankQueryResp{
+		Code: resp.Code,
+		Msg:  resp.Msg,
+		List: make([]*msg.RankItem, 0, len(resp.List)),
+	}
+	for _, item := range resp.List {
+		rankResp.List = append(rankResp.List, &msg.RankItem{
+			PlayerId: item.PlayerId,
+			Score:    item.Score,
+			Rank:     item.Rank,
+		})
+	}
+
+	body, err := proto.Marshal(rankResp)
+	if err != nil {
+		logger.Error("排行榜响应序列化失败", "session_id", s.logID(), "player_id", playerID, "error", err)
+		s.SendError(errcode.ErrSystem, "系统错误")
+		return
+	}
+
+	// 发送响应给客户端
+	s.Send(&network.Packet{
+		MsgID: network.MsgIDRankQueryResp,
+		SeqID: packet.SeqID,
+		Body:  body,
+	})
+
+	logger.Info("排行榜查询响应发送成功", "session_id", s.logID(), "player_id", playerID, "count", len(rankResp.List))
 }

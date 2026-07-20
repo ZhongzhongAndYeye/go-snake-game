@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"go-snake-game/pkg/errcode"
 	"go-snake-game/pkg/logger"
 	"go-snake-game/pkg/network"
 )
@@ -33,13 +34,13 @@ func AuthMiddleware(next HandlerFunc) HandlerFunc {
 		token, err := extractTokenFromRequest(packet.Body)
 		if err != nil {
 			logger.Warn("从请求中提取 Token 失败", "session_id", s.logID(), "error", err)
-			s.SendError(ErrCodeNotLogin, "请先登录")
+			s.SendError(errcode.ErrNotLogin, "请先登录")
 			return
 		}
 
 		if token == "" {
 			logger.Warn("请求中未携带 Token", "session_id", s.logID())
-			s.SendError(ErrCodeNotLogin, "请先登录")
+			s.SendError(errcode.ErrNotLogin, "请先登录")
 			return
 		}
 
@@ -50,14 +51,14 @@ func AuthMiddleware(next HandlerFunc) HandlerFunc {
 		resp, err := GlobalLoginClient.VerifyToken(ctx, token)
 		if err != nil {
 			logger.Error("调用登录服 VerifyToken 接口失败", "session_id", s.logID(), "token", maskToken(token), "error", err)
-			s.SendError(ErrCodeSystemError, "鉴权失败，请稍后重试")
+			s.SendError(errcode.ErrSystem, "鉴权失败，请稍后重试")
 			return
 		}
 
 		// 步骤4：校验结果处理
 		if resp.Code != 0 {
 			logger.Warn("Token 校验失败", "session_id", s.logID(), "token", maskToken(token), "code", resp.Code, "msg", resp.Msg)
-			s.SendError(ErrCodeNotLogin, resp.Msg)
+			s.SendError(errcode.ErrNotLogin, resp.Msg)
 			return
 		}
 

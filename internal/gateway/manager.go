@@ -109,7 +109,7 @@ func (m *SessionManager) RemoveSession(sessionID uint64) {
 		// 如果玩家已登录，通知游戏服离线
 		if s.playerID > 0 {
 			logger.Info("玩家离线，通知游戏服", "player_id", s.playerID, "room_id", s.RoomID)
-			GlobalGameClient.PlayerOffline(context.Background(), s.playerID, s.RoomID)
+			_, _ = GlobalGameClient.PlayerOffline(context.Background(), s.playerID, s.RoomID)
 		}
 
 		// 如果会话在房间中，从房间分组移除

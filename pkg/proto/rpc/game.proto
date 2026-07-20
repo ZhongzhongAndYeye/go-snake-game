@@ -22,6 +22,9 @@ service GameService {
   //   - 游戏中：标记蛇死亡，触发游戏结束判定
   //   - 匹配中：从匹配队列移除
   rpc PlayerOffline(PlayerOfflineRequest) returns (PlayerOfflineResponse);
+  // GetGlobalRank 查询全服排行榜
+  // 返回 Top100 玩家排名，按分数从高到低排序。
+  rpc GetGlobalRank(GetGlobalRankRequest) returns (GetGlobalRankResponse);
 }
 
 // Point 网格坐标点
@@ -118,4 +121,21 @@ message PlayerOfflineRequest {
 message PlayerOfflineResponse {
   int32  code = 1; // 业务状态码，0 成功，非 0 失败
   string msg  = 2; // 提示信息
+}
+
+// GetGlobalRankRequest 查询全服排行榜请求
+message GetGlobalRankRequest {}
+
+// GetGlobalRankResponse 查询全服排行榜响应
+message GetGlobalRankResponse {
+  int32  code = 1; // 业务状态码，0 成功，非 0 失败
+  string msg  = 2; // 提示信息
+  repeated RankItem list = 3; // 排行榜条目列表
+}
+
+// RankItem 排行榜条目
+message RankItem {
+  uint64 player_id = 1; // 玩家 ID
+  int32  score     = 2; // 玩家得分
+  int32  rank      = 3; // 排名，从 1 开始
 }

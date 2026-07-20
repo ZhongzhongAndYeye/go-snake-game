@@ -79,3 +79,22 @@ message GameStateSync {
 message GameOverNotify {
   repeated PlayerRank ranks = 1; // 玩家排名列表，按排名升序排列
 }
+
+// ---- 排行榜查询 ----
+
+// 排行榜查询请求（客户端 → 游戏服）
+message RankQueryReq {}
+
+// 排行榜查询响应（游戏服 → 客户端）
+message RankQueryResp {
+  int32  code = 1; // 业务状态码，0 成功，非 0 失败
+  string msg  = 2; // 提示信息
+  repeated RankItem list = 3; // 排行榜条目列表
+}
+
+// RankItem 排行榜条目
+message RankItem {
+  uint64 player_id = 1; // 玩家 ID
+  int32  score     = 2; // 玩家得分
+  int32  rank      = 3; // 排名，从 1 开始
+}

@@ -36,4 +36,6 @@ const (
 	MsgIDGameStartNotify  uint16 = 3002 // 游戏服 → 客户端：游戏开始广播
 	MsgIDGameStateSync    uint16 = 3003 // 游戏服 → 客户端：帧状态同步
 	MsgIDGameOverNotify   uint16 = 3004 // 游戏服 → 客户端：游戏结束广播
+	MsgIDRankQueryReq     uint16 = 3005 // 客户端 → 游戏服：排行榜查询请求
+	MsgIDRankQueryResp    uint16 = 3006 // 游戏服 → 客户端：排行榜查询响应
 )

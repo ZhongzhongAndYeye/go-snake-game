@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"go-snake-game/pkg/errcode"
 	"go-snake-game/pkg/logger"
 	"go-snake-game/pkg/network"
 	"go-snake-game/pkg/proto/msg"
@@ -20,7 +21,7 @@ func RegisterHandler(s *Session, packet *network.Packet) {
 	req := &msg.RegisterReq{}
 	if err := proto.Unmarshal(packet.Body, req); err != nil {
 		logger.Warn("注册请求反序列化失败", "session_id", s.logID(), "error", err)
-		s.SendError(ErrCodeParamError, "请求参数格式错误")
+		s.SendError(errcode.ErrParam, "请求参数格式错误")
 		return
 	}
 
@@ -29,7 +30,7 @@ func RegisterHandler(s *Session, packet *network.Packet) {
 	password := req.GetPassword()
 	if err := validateRegisterParams(username, password); err != nil {
 		logger.Warn("注册参数校验失败", "session_id", s.logID(), "username", username, "error", err)
-		s.SendError(ErrCodeParamError, err.Error())
+		s.SendError(errcode.ErrParam, err.Error())
 		return
 	}
 
@@ -41,7 +42,7 @@ func RegisterHandler(s *Session, packet *network.Packet) {
 	resp, err := GlobalLoginClient.Register(ctx, username, password)
 	if err != nil {
 		logger.Error("调用登录服注册接口失败", "session_id", s.logID(), "username", username, "error", err)
-		s.SendError(ErrCodeSystemError, "注册失败，请稍后重试")
+		s.SendError(errcode.ErrSystem, "注册失败，请稍后重试")
 		return
 	}
 
@@ -56,7 +57,7 @@ func RegisterHandler(s *Session, packet *network.Packet) {
 	body, err := proto.Marshal(registerResp)
 	if err != nil {
 		logger.Error("注册响应序列化失败", "session_id", s.logID(), "username", username, "error", err)
-		s.SendError(ErrCodeSystemError, "系统错误")
+		s.SendError(errcode.ErrSystem, "系统错误")
 		return
 	}
 
@@ -78,7 +79,7 @@ func LoginHandler(s *Session, packet *network.Packet) {
 	req := &msg.LoginReq{}
 	if err := proto.Unmarshal(packet.Body, req); err != nil {
 		logger.Warn("登录请求反序列化失败", "session_id", s.logID(), "error", err)
-		s.SendError(ErrCodeParamError, "请求参数格式错误")
+		s.SendError(errcode.ErrParam, "请求参数格式错误")
 		return
 	}
 
@@ -87,7 +88,7 @@ func LoginHandler(s *Session, packet *network.Packet) {
 	password := req.GetPassword()
 	if err := validateLoginParams(username, password); err != nil {
 		logger.Warn("登录参数校验失败", "session_id", s.logID(), "username", username, "error", err)
-		s.SendError(ErrCodeParamError, err.Error())
+		s.SendError(errcode.ErrParam, err.Error())
 		return
 	}
 
@@ -99,7 +100,7 @@ func LoginHandler(s *Session, packet *network.Packet) {
 	resp, err := GlobalLoginClient.Login(ctx, username, password)
 	if err != nil {
 		logger.Error("调用登录服登录接口失败", "session_id", s.logID(), "username", username, "error", err)
-		s.SendError(ErrCodeSystemError, "登录失败，请稍后重试")
+		s.SendError(errcode.ErrSystem, "登录失败，请稍后重试")
 		return
 	}
 
@@ -122,7 +123,7 @@ func LoginHandler(s *Session, packet *network.Packet) {
 	body, err := proto.Marshal(loginResp)
 	if err != nil {
 		logger.Error("登录响应序列化失败", "session_id", s.logID(), "username", username, "error", err)
-		s.SendError(ErrCodeSystemError, "系统错误")
+		s.SendError(errcode.ErrSystem, "系统错误")
 		return
 	}
 

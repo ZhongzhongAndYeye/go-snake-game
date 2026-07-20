@@ -4,23 +4,17 @@ import (
 	"context"
 	"errors"
 
+	"go-snake-game/pkg/errcode"
 	"go-snake-game/pkg/logger"
 	pb "go-snake-game/pkg/proto/rpc"
 	"go-snake-game/pkg/utils"
 )
 
 // 业务错误码，统一封装响应中的 code 字段
-const (
-	CodeSuccess           = 0 // 成功
-	CodeInvalidParam      = 1 // 参数格式错误（用户名/密码不符合规则）
-	CodeUsernameExists    = 2 // 用户名已存在
-	CodeAccountNotFound   = 3 // 账号不存在
-	CodePasswordIncorrect = 4 // 密码错误
-	CodeRegisterFailed    = 5 // 注册失败（服务端内部错误）
-	CodeLoginFailed       = 6 // 登录失败（服务端内部错误）
-	CodeTokenNotFound     = 7 // Token 不存在或已过期
-	CodeTokenInvalid      = 8 // Token 格式无效
-)
+// 引用 pkg/errcode 全局常量，按业务分号段：
+//   - 通用：errcode.OK(0)、errcode.ErrParam(10001)、errcode.ErrSystem(10002)
+//   - 账号：errcode.ErrUserExist(20001)、errcode.ErrUserNotExist(20002) 等
+const ()
 
 // LoginServerImpl 登录 gRPC 服务端实现。
 // 嵌入 UnimplementedLoginServiceServer 保证向前兼容，
@@ -49,7 +43,7 @@ func (s *LoginServerImpl) Register(ctx context.Context, req *pb.RegisterRequest)
 	}
 
 	logger.Info("gRPC Register success", "player_id", playerID)
-	return &pb.RegisterResponse{Code: CodeSuccess, Msg: "注册成功", PlayerId: playerID}, nil
+	return &pb.RegisterResponse{Code: errcode.OK, Msg: "注册成功", PlayerId: playerID}, nil
 }
 
 // Login 账号登录。
@@ -65,7 +59,7 @@ func (s *LoginServerImpl) Login(ctx context.Context, req *pb.LoginRequest) (*pb.
 
 	logger.Info("gRPC Login success", "player_id", playerID)
 	return &pb.LoginResponse{
-		Code:     CodeSuccess,
+		Code:     errcode.OK,
 		Msg:      "登录成功",
 		PlayerId: playerID,
 		Nickname: nickname,
@@ -83,7 +77,7 @@ func (s *LoginServerImpl) VerifyToken(ctx context.Context, req *pb.VerifyTokenRe
 	}
 
 	logger.Info("gRPC VerifyToken success", "player_id", playerID)
-	return &pb.VerifyTokenResponse{Code: CodeSuccess, Msg: "Token 有效", PlayerId: playerID}, nil
+	return &pb.VerifyTokenResponse{Code: errcode.OK, Msg: "Token 有效", PlayerId: playerID}, nil
 }
 
 // mapRegisterError 将注册业务错误映射为错误码和提示信息。
@@ -95,11 +89,11 @@ func mapRegisterError(err error) (int32, string) {
 		errors.Is(err, ErrPasswordEmpty),
 		errors.Is(err, ErrPasswordTooShort),
 		errors.Is(err, ErrPasswordTooLong):
-		return CodeInvalidParam, "参数格式错误"
+		return errcode.ErrParam, "参数格式错误"
 	case errors.Is(err, ErrUsernameExists):
-		return CodeUsernameExists, "用户名已存在"
+		return errcode.ErrUserExist, "用户名已存在"
 	default:
-		return CodeRegisterFailed, "注册失败，请稍后重试"
+		return errcode.ErrSystem, "注册失败，请稍后重试"
 	}
 }
 
@@ -112,13 +106,13 @@ func mapLoginError(err error) (int32, string) {
 		errors.Is(err, ErrPasswordEmpty),
 		errors.Is(err, ErrPasswordTooShort),
 		errors.Is(err, ErrPasswordTooLong):
-		return CodeInvalidParam, "参数格式错误"
+		return errcode.ErrParam, "参数格式错误"
 	case errors.Is(err, ErrAccountNotFound):
-		return CodeAccountNotFound, "账号不存在"
+		return errcode.ErrUserNotExist, "账号不存在"
 	case errors.Is(err, ErrPasswordIncorrect):
-		return CodePasswordIncorrect, "密码错误"
+		return errcode.ErrPassword, "密码错误"
 	default:
-		return CodeLoginFailed, "登录失败，请稍后重试"
+		return errcode.ErrSystem, "登录失败，请稍后重试"
 	}
 }
 
@@ -126,10 +120,10 @@ func mapLoginError(err error) (int32, string) {
 func mapVerifyTokenError(err error) (int32, string) {
 	switch {
 	case errors.Is(err, utils.ErrTokenNotFound):
-		return CodeTokenNotFound, "Token 无效或已过期"
+		return errcode.ErrTokenInvalid, "Token 无效或已过期"
 	case errors.Is(err, utils.ErrTokenInvalid):
-		return CodeTokenInvalid, "Token 格式无效"
+		return errcode.ErrTokenInvalid, "Token 格式无效"
 	default:
-		return CodeTokenInvalid, "Token 校验失败"
+		return errcode.ErrTokenInvalid, "Token 校验失败"
 	}
 }

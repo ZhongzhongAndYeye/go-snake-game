@@ -11,6 +11,7 @@ import (
 	"go-snake-game/pkg/logger"
 	"go-snake-game/pkg/network"
 	"go-snake-game/pkg/proto/msg"
+	"go-snake-game/pkg/utils"
 
 	"google.golang.org/protobuf/proto"
 )
@@ -106,6 +107,13 @@ func (r *Room) EndGame() {
 					logger.Warn("更新玩家最高分失败", "player_id", pid, "score", score, "error", err)
 				}
 			}(p.PlayerID, snake.Score)
+
+			// 异步写入 Redis 全服排行榜
+			go func(pid uint64, score int) {
+				if err := utils.AddPlayerScore(pid, score); err != nil {
+					logger.Warn("写入排行榜失败", "player_id", pid, "score", score, "error", err)
+				}
+			}(p.PlayerID, snake.Score)
 		}
 	}
 
@@ -119,6 +127,7 @@ func (r *Room) EndGame() {
 
 // HandlePlayerOperation 线程安全地处理玩家操作（改变蛇的方向）。
 // 游戏未开始或已结束则忽略操作。
+// 内置频率限制：每 100ms 最多接受 1 次方向操作，超过频率的静默丢弃。
 func (r *Room) HandlePlayerOperation(playerID uint64, direction int) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -131,6 +140,14 @@ func (r *Room) HandlePlayerOperation(playerID uint64, direction int) {
 	if !ok || !snake.IsAlive {
 		return
 	}
+
+	// 操作频率限制：每 100ms 最多 1 次
+	now := time.Now()
+	if !snake.lastOpTime.IsZero() && now.Sub(snake.lastOpTime) < opRateLimitInterval {
+		// 静默丢弃，不返回错误
+		return
+	}
+	snake.lastOpTime = now
 
 	snake.ChangeDirection(direction)
 }

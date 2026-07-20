@@ -594,6 +594,165 @@ func (x *GameOverNotify) GetRanks() []*PlayerRank {
 	return nil
 }
 
+// 排行榜查询请求（客户端 → 游戏服）
+type RankQueryReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RankQueryReq) Reset() {
+	*x = RankQueryReq{}
+	mi := &file_pkg_proto_msg_game_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RankQueryReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RankQueryReq) ProtoMessage() {}
+
+func (x *RankQueryReq) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_msg_game_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RankQueryReq.ProtoReflect.Descriptor instead.
+func (*RankQueryReq) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_msg_game_proto_rawDescGZIP(), []int{10}
+}
+
+// 排行榜查询响应（游戏服 → 客户端）
+type RankQueryResp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          int32                  `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"` // 业务状态码，0 成功，非 0 失败
+	Msg           string                 `protobuf:"bytes,2,opt,name=msg,proto3" json:"msg,omitempty"`    // 提示信息
+	List          []*RankItem            `protobuf:"bytes,3,rep,name=list,proto3" json:"list,omitempty"`  // 排行榜条目列表
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RankQueryResp) Reset() {
+	*x = RankQueryResp{}
+	mi := &file_pkg_proto_msg_game_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RankQueryResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RankQueryResp) ProtoMessage() {}
+
+func (x *RankQueryResp) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_msg_game_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RankQueryResp.ProtoReflect.Descriptor instead.
+func (*RankQueryResp) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_msg_game_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *RankQueryResp) GetCode() int32 {
+	if x != nil {
+		return x.Code
+	}
+	return 0
+}
+
+func (x *RankQueryResp) GetMsg() string {
+	if x != nil {
+		return x.Msg
+	}
+	return ""
+}
+
+func (x *RankQueryResp) GetList() []*RankItem {
+	if x != nil {
+		return x.List
+	}
+	return nil
+}
+
+// RankItem 排行榜条目
+type RankItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"` // 玩家 ID
+	Score         int32                  `protobuf:"varint,2,opt,name=score,proto3" json:"score,omitempty"`                       // 玩家得分
+	Rank          int32                  `protobuf:"varint,3,opt,name=rank,proto3" json:"rank,omitempty"`                         // 排名，从 1 开始
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RankItem) Reset() {
+	*x = RankItem{}
+	mi := &file_pkg_proto_msg_game_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RankItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RankItem) ProtoMessage() {}
+
+func (x *RankItem) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_msg_game_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RankItem.ProtoReflect.Descriptor instead.
+func (*RankItem) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_msg_game_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *RankItem) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *RankItem) GetScore() int32 {
+	if x != nil {
+		return x.Score
+	}
+	return 0
+}
+
+func (x *RankItem) GetRank() int32 {
+	if x != nil {
+		return x.Rank
+	}
+	return 0
+}
+
 var File_pkg_proto_msg_game_proto protoreflect.FileDescriptor
 
 const file_pkg_proto_msg_game_proto_rawDesc = "" +
@@ -638,7 +797,16 @@ const file_pkg_proto_msg_game_proto_rawDesc = "" +
 	"\x06snakes\x18\x02 \x03(\v2\x0f.msg.SnakeStateR\x06snakes\x12\"\n" +
 	"\x04food\x18\x03 \x01(\v2\x0e.msg.FoodStateR\x04food\"7\n" +
 	"\x0eGameOverNotify\x12%\n" +
-	"\x05ranks\x18\x01 \x03(\v2\x0f.msg.PlayerRankR\x05ranksB\x0fZ\rpkg/proto/msgb\x06proto3"
+	"\x05ranks\x18\x01 \x03(\v2\x0f.msg.PlayerRankR\x05ranks\"\x0e\n" +
+	"\fRankQueryReq\"X\n" +
+	"\rRankQueryResp\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x10\n" +
+	"\x03msg\x18\x02 \x01(\tR\x03msg\x12!\n" +
+	"\x04list\x18\x03 \x03(\v2\r.msg.RankItemR\x04list\"Q\n" +
+	"\bRankItem\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x14\n" +
+	"\x05score\x18\x02 \x01(\x05R\x05score\x12\x12\n" +
+	"\x04rank\x18\x03 \x01(\x05R\x04rankB\x0fZ\rpkg/proto/msgb\x06proto3"
 
 var (
 	file_pkg_proto_msg_game_proto_rawDescOnce sync.Once
@@ -652,7 +820,7 @@ func file_pkg_proto_msg_game_proto_rawDescGZIP() []byte {
 	return file_pkg_proto_msg_game_proto_rawDescData
 }
 
-var file_pkg_proto_msg_game_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_pkg_proto_msg_game_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_pkg_proto_msg_game_proto_goTypes = []any{
 	(*Point)(nil),             // 0: msg.Point
 	(*SnakeState)(nil),        // 1: msg.SnakeState
@@ -664,20 +832,24 @@ var file_pkg_proto_msg_game_proto_goTypes = []any{
 	(*GameStartNotify)(nil),   // 7: msg.GameStartNotify
 	(*GameStateSync)(nil),     // 8: msg.GameStateSync
 	(*GameOverNotify)(nil),    // 9: msg.GameOverNotify
+	(*RankQueryReq)(nil),      // 10: msg.RankQueryReq
+	(*RankQueryResp)(nil),     // 11: msg.RankQueryResp
+	(*RankItem)(nil),          // 12: msg.RankItem
 }
 var file_pkg_proto_msg_game_proto_depIdxs = []int32{
-	0, // 0: msg.SnakeState.body:type_name -> msg.Point
-	0, // 1: msg.FoodState.position:type_name -> msg.Point
-	1, // 2: msg.GameStartNotify.snakes:type_name -> msg.SnakeState
-	2, // 3: msg.GameStartNotify.food:type_name -> msg.FoodState
-	1, // 4: msg.GameStateSync.snakes:type_name -> msg.SnakeState
-	2, // 5: msg.GameStateSync.food:type_name -> msg.FoodState
-	3, // 6: msg.GameOverNotify.ranks:type_name -> msg.PlayerRank
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	0,  // 0: msg.SnakeState.body:type_name -> msg.Point
+	0,  // 1: msg.FoodState.position:type_name -> msg.Point
+	1,  // 2: msg.GameStartNotify.snakes:type_name -> msg.SnakeState
+	2,  // 3: msg.GameStartNotify.food:type_name -> msg.FoodState
+	1,  // 4: msg.GameStateSync.snakes:type_name -> msg.SnakeState
+	2,  // 5: msg.GameStateSync.food:type_name -> msg.FoodState
+	3,  // 6: msg.GameOverNotify.ranks:type_name -> msg.PlayerRank
+	12, // 7: msg.RankQueryResp.list:type_name -> msg.RankItem
+	8,  // [8:8] is the sub-list for method output_type
+	8,  // [8:8] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_pkg_proto_msg_game_proto_init() }
@@ -691,7 +863,7 @@ func file_pkg_proto_msg_game_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_pkg_proto_msg_game_proto_rawDesc), len(file_pkg_proto_msg_game_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -3,18 +3,15 @@ package gateway
 import (
 	"fmt"
 
+	"go-snake-game/pkg/errcode"
 	"go-snake-game/pkg/network"
 )
 
 // 【网关服务器错误应答】
 
-// ---- 通用错误码常量 ----
+// 本地错误码常量（仅网关内部使用，未归入全局 errcode 包的错误）。
 const (
-	ErrCodeSuccess     uint16 = 0 // 成功，无错误
-	ErrCodeParamError  uint16 = 1 // 参数错误，客户端请求参数不合法
-	ErrCodeNotLogin    uint16 = 2 // 未登录，玩家未登录时尝试访问需要登录的接口
 	ErrCodeMsgNotFound uint16 = 3 // 消息不存在，客户端发送了未注册的消息 ID
-	ErrCodeSystemError uint16 = 4 // 系统内部错误，服务端处理异常
 )
 
 // SendError 向客户端发送统一格式的错误响应。
@@ -56,16 +53,16 @@ func (s *Session) SendError(code uint16, msg string) {
 // 方便在日志中快速识别错误类型。
 func ErrorCodeName(code uint16) string {
 	switch code {
-	case ErrCodeSuccess:
+	case errcode.OK:
 		return "SUCCESS"
-	case ErrCodeParamError:
+	case errcode.ErrParam:
 		return "PARAM_ERROR"
-	case ErrCodeNotLogin:
+	case errcode.ErrNotLogin:
 		return "NOT_LOGIN"
+	case errcode.ErrSystem:
+		return "SYSTEM_ERROR"
 	case ErrCodeMsgNotFound:
 		return "MSG_NOT_FOUND"
-	case ErrCodeSystemError:
-		return "SYSTEM_ERROR"
 	default:
 		return fmt.Sprintf("UNKNOWN(%d)", code)
 	}

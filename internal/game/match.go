@@ -13,14 +13,24 @@ import (
 	"time"
 
 	"go-snake-game/pkg/db"
+	"go-snake-game/pkg/errcode"
 	"go-snake-game/pkg/logger"
+	"go-snake-game/pkg/network"
+	"go-snake-game/pkg/proto/msg"
 
 	"github.com/redis/go-redis/v9"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
 	// matchQueueKey Redis 匹配等待队列 key
 	matchQueueKey = "game:match:queue"
+
+	// matchTimeout 匹配超时时间，超过此时间未匹配成功则自动取消
+	matchTimeout = 60 * time.Second
+
+	// matchTimeoutScanInterval 匹配超时扫描间隔
+	matchTimeoutScanInterval = 10 * time.Second
 )
 
 // 预定义错误，供调用方判断匹配队列操作结果
@@ -33,14 +43,16 @@ var (
 
 // matchQueueItem 匹配队列元素，存储等待匹配的玩家信息。
 type matchQueueItem struct {
-	PlayerID uint64 `json:"player_id"`
-	Nickname string `json:"nickname"`
+	PlayerID uint64    `json:"player_id"`
+	Nickname string    `json:"nickname"`
+	JoinTime time.Time `json:"join_time"` // 入队时间，用于超时判定
 }
 
 // MatchManager 匹配管理器，基于 Redis List 实现双人匹配队列。
 // 等待玩家进入队列后，匹配管理器自动尝试与后进入的玩家配对。
 type MatchManager struct {
-	rdb *redis.Client
+	rdb      *redis.Client
+	scanOnce sync.Once // 确保超时扫描协程只启动一次
 }
 
 var (
@@ -49,11 +61,13 @@ var (
 )
 
 // GetMatchManager 获取 MatchManager 全局单例。
+// 首次调用时会自动启动后台匹配超时扫描协程。
 func GetMatchManager() *MatchManager {
 	matchManagerOnce.Do(func() {
 		matchManagerInstance = &MatchManager{
 			rdb: db.GlobalRedis,
 		}
+		matchManagerInstance.StartTimeoutScanner()
 	})
 	return matchManagerInstance
 }
@@ -75,6 +89,7 @@ func (m *MatchManager) AddToMatchQueue(playerID uint64, nickname string) (roomID
 			item := matchQueueItem{
 				PlayerID: playerID,
 				Nickname: nickname,
+				JoinTime: time.Now(),
 			}
 			data, marshalErr := json.Marshal(item)
 			if marshalErr != nil {
@@ -174,4 +189,97 @@ func generateRoomID() string {
 		return fmt.Sprintf("%d%06d", now, time.Now().UnixNano()%1000000)
 	}
 	return fmt.Sprintf("%d%06d", now, n.Int64())
+}
+
+// StartTimeoutScanner 启动后台匹配超时扫描协程。
+// 每 10 秒扫描一次 Redis 匹配队列，检查是否有玩家等待超过 60 秒。
+// 超时玩家自动从队列移除，并通过网关推送超时通知。
+// 使用 sync.Once 确保只启动一个协程。
+func (m *MatchManager) StartTimeoutScanner() {
+	m.scanOnce.Do(func() {
+		go func() {
+			ticker := time.NewTicker(matchTimeoutScanInterval)
+			defer ticker.Stop()
+
+			logger.Info("匹配超时扫描协程已启动", "timeout", matchTimeout, "interval", matchTimeoutScanInterval)
+			for range ticker.C {
+				m.scanTimeoutPlayers()
+			}
+		}()
+	})
+}
+
+// scanTimeoutPlayers 扫描匹配队列中的超时玩家。
+// 遍历队列中所有元素，将等待超过 matchTimeout 的玩家移出队列，
+// 并通过网关推送超时通知。
+func (m *MatchManager) scanTimeoutPlayers() {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// 获取队列中所有元素
+	vals, err := m.rdb.LRange(ctx, matchQueueKey, 0, -1).Result()
+	if err != nil {
+		logger.Warn("匹配超时扫描获取队列失败", "error", err.Error())
+		return
+	}
+
+	if len(vals) == 0 {
+		return
+	}
+
+	now := time.Now()
+	var timeoutPlayers []matchQueueItem
+
+	// 检查超时玩家
+	for _, val := range vals {
+		var item matchQueueItem
+		if unmarshalErr := json.Unmarshal([]byte(val), &item); unmarshalErr != nil {
+			logger.Warn("匹配超时扫描跳过异常数据", "data", val, "error", unmarshalErr.Error())
+			continue
+		}
+
+		if !item.JoinTime.IsZero() && now.Sub(item.JoinTime) > matchTimeout {
+			timeoutPlayers = append(timeoutPlayers, item)
+		}
+	}
+
+	// 移除超时玩家并推送通知
+	for _, item := range timeoutPlayers {
+		// 从队列中移除
+		removed, remErr := m.rdb.LRem(ctx, matchQueueKey, 1, valForItem(item)).Result()
+		if remErr != nil {
+			logger.Warn("匹配超时移除玩家失败", "player_id", item.PlayerID, "error", remErr.Error())
+			continue
+		}
+		if removed == 0 {
+			// 玩家可能已被匹配或取消，跳过
+			continue
+		}
+
+		logger.Info("匹配超时，玩家已从队列移除", "player_id", item.PlayerID, "waited", now.Sub(item.JoinTime))
+
+		// 通过网关推送超时通知
+		if GlobalGatewayClient != nil {
+			notify := &msg.MatchCancelResp{
+				Code: errcode.ErrMatchTimeout,
+				Msg:  "匹配超时，请重新发起匹配",
+			}
+			body, marshalErr := proto.Marshal(notify)
+			if marshalErr != nil {
+				logger.Warn("匹配超时通知序列化失败", "player_id", item.PlayerID, "error", marshalErr.Error())
+				continue
+			}
+			GlobalGatewayClient.SendPlayerMsg(item.PlayerID, network.MsgIDMatchCancelResp, body)
+		}
+	}
+
+	if len(timeoutPlayers) > 0 {
+		logger.Info("匹配超时扫描完成", "timeout_count", len(timeoutPlayers))
+	}
+}
+
+// valForItem 将 matchQueueItem 序列化为 JSON 字符串，用于 LRem 定位。
+func valForItem(item matchQueueItem) string {
+	data, _ := json.Marshal(item)
+	return string(data)
 }

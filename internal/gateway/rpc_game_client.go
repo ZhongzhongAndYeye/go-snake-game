@@ -149,3 +149,20 @@ func (c *GameRpcClient) PlayerOffline(ctx context.Context, playerID uint64, room
 	logger.Info("gRPC PlayerOffline 响应", "player_id", playerID, "code", resp.Code, "msg", resp.Msg)
 	return resp, nil
 }
+
+// GetGlobalRank 调用游戏服查询全服排行榜接口。
+func (c *GameRpcClient) GetGlobalRank(ctx context.Context) (*rpc.GetGlobalRankResponse, error) {
+	if c == nil {
+		return nil, ErrRpcClientNotInit
+	}
+
+	logger.Info("gRPC GetGlobalRank 请求")
+
+	resp, err := c.client.GetGlobalRank(ctx, &rpc.GetGlobalRankRequest{})
+	if err != nil {
+		return nil, wrapGrpcError(err)
+	}
+
+	logger.Info("gRPC GetGlobalRank 响应", "code", resp.Code, "count", len(resp.List))
+	return resp, nil
+}

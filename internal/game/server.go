@@ -7,19 +7,17 @@ import (
 	"context"
 	"errors"
 
+	"go-snake-game/pkg/errcode"
 	"go-snake-game/pkg/logger"
 	pb "go-snake-game/pkg/proto/rpc"
+	"go-snake-game/pkg/utils"
 )
 
 // 业务错误码，统一封装响应中的 code 字段
-const (
-	CodeSuccess         = 0 // 成功
-	CodeInvalidParam    = 1 // 参数格式错误
-	CodeMatchFailed     = 2 // 匹配失败
-	CodeCancelMatchFail = 3 // 取消匹配失败
-	CodeRoomNotFound    = 4 // 房间不存在
-	CodeOperationFail   = 5 // 游戏操作失败
-)
+// 引用 pkg/errcode 全局常量，按业务分号段：
+//   - 通用：errcode.OK(0)、errcode.ErrParam(10001)、errcode.ErrSystem(10002)
+//   - 游戏：errcode.ErrMatchFailed(30001)、errcode.ErrRoomNotExist(30002) 等
+const ()
 
 // GameServerImpl 游戏 gRPC 服务端实现。
 // 嵌入 UnimplementedGameServiceServer 保证向前兼容，
@@ -49,14 +47,14 @@ func (s *GameServerImpl) StartMatch(ctx context.Context, req *pb.StartMatchReque
 	// 参数校验
 	if playerID == 0 {
 		logger.Warn("gRPC StartMatch 参数无效", "player_id", playerID)
-		return &pb.StartMatchResponse{Code: CodeInvalidParam, Msg: "玩家 ID 不能为空"}, nil
+		return &pb.StartMatchResponse{Code: errcode.ErrParam, Msg: "玩家 ID 不能为空"}, nil
 	}
 
 	// 调用匹配管理器加入队列
 	roomID, isMatched, waitingPlayerID, waitingNickname, err := s.matchManager.AddToMatchQueue(playerID, nickname)
 	if err != nil {
 		logger.Warn("gRPC StartMatch 匹配失败", "player_id", playerID, "error", err.Error())
-		return &pb.StartMatchResponse{Code: CodeMatchFailed, Msg: "匹配失败，请稍后重试"}, nil
+		return &pb.StartMatchResponse{Code: errcode.ErrMatchFailed, Msg: "匹配失败，请稍后重试"}, nil
 	}
 
 	if isMatched {
@@ -76,7 +74,7 @@ func (s *GameServerImpl) StartMatch(ctx context.Context, req *pb.StartMatchReque
 
 		logger.Info("gRPC StartMatch 匹配成功", "player_id", playerID, "room_id", roomID)
 		return &pb.StartMatchResponse{
-			Code:      CodeSuccess,
+			Code:      errcode.OK,
 			Msg:       "匹配成功",
 			RoomId:    roomID,
 			IsMatched: true,
@@ -86,7 +84,7 @@ func (s *GameServerImpl) StartMatch(ctx context.Context, req *pb.StartMatchReque
 	// 匹配等待中
 	logger.Info("gRPC StartMatch 进入等待", "player_id", playerID)
 	return &pb.StartMatchResponse{
-		Code:      CodeSuccess,
+		Code:      errcode.OK,
 		Msg:       "已进入匹配队列",
 		RoomId:    "",
 		IsMatched: false,
@@ -102,7 +100,7 @@ func (s *GameServerImpl) CancelMatch(ctx context.Context, req *pb.CancelMatchReq
 	// 参数校验
 	if playerID == 0 {
 		logger.Warn("gRPC CancelMatch 参数无效", "player_id", playerID)
-		return &pb.CancelMatchResponse{Code: CodeInvalidParam, Msg: "玩家 ID 不能为空"}, nil
+		return &pb.CancelMatchResponse{Code: errcode.ErrParam, Msg: "玩家 ID 不能为空"}, nil
 	}
 
 	// 调用匹配管理器移除玩家
@@ -110,14 +108,14 @@ func (s *GameServerImpl) CancelMatch(ctx context.Context, req *pb.CancelMatchReq
 	if err != nil {
 		if errors.Is(err, ErrPlayerNotInQueue) {
 			logger.Warn("gRPC CancelMatch 玩家不在队列", "player_id", playerID)
-			return &pb.CancelMatchResponse{Code: CodeCancelMatchFail, Msg: "您不在匹配队列中"}, nil
+			return &pb.CancelMatchResponse{Code: errcode.ErrMatchFailed, Msg: "您不在匹配队列中"}, nil
 		}
 		logger.Warn("gRPC CancelMatch 取消失败", "player_id", playerID, "error", err.Error())
-		return &pb.CancelMatchResponse{Code: CodeCancelMatchFail, Msg: "取消匹配失败，请稍后重试"}, nil
+		return &pb.CancelMatchResponse{Code: errcode.ErrMatchFailed, Msg: "取消匹配失败，请稍后重试"}, nil
 	}
 
 	logger.Info("gRPC CancelMatch 成功", "player_id", playerID)
-	return &pb.CancelMatchResponse{Code: CodeSuccess, Msg: "取消匹配成功"}, nil
+	return &pb.CancelMatchResponse{Code: errcode.OK, Msg: "取消匹配成功"}, nil
 }
 
 // GetRoomInfo 获取当前房间信息。
@@ -129,14 +127,14 @@ func (s *GameServerImpl) GetRoomInfo(ctx context.Context, req *pb.GetRoomInfoReq
 	// 参数校验
 	if roomID == "" {
 		logger.Warn("gRPC GetRoomInfo 参数无效", "room_id", roomID)
-		return &pb.GetRoomInfoResponse{Code: CodeInvalidParam, Msg: "房间 ID 不能为空"}, nil
+		return &pb.GetRoomInfoResponse{Code: errcode.ErrParam, Msg: "房间 ID 不能为空"}, nil
 	}
 
 	// 查询房间管理器
 	room, ok := s.roomManager.GetRoom(roomID)
 	if !ok {
 		logger.Warn("gRPC GetRoomInfo 房间不存在", "room_id", roomID)
-		return &pb.GetRoomInfoResponse{Code: CodeRoomNotFound, Msg: "房间不存在"}, nil
+		return &pb.GetRoomInfoResponse{Code: errcode.ErrRoomNotExist, Msg: "房间不存在"}, nil
 	}
 
 	room.mu.Lock()
@@ -180,7 +178,7 @@ func (s *GameServerImpl) GetRoomInfo(ctx context.Context, req *pb.GetRoomInfoReq
 
 	logger.Info("gRPC GetRoomInfo 成功", "room_id", roomID, "player_count", len(players), "game_status", room.GameStatus)
 	return &pb.GetRoomInfoResponse{
-		Code:       CodeSuccess,
+		Code:       errcode.OK,
 		Msg:        "获取房间信息成功",
 		RoomId:     roomID,
 		Players:    players,
@@ -203,13 +201,13 @@ func (s *GameServerImpl) PlayerOperation(ctx context.Context, req *pb.PlayerOper
 	// 参数校验
 	if playerID == 0 {
 		logger.Warn("gRPC PlayerOperation 参数无效", "player_id", playerID)
-		return &pb.PlayerOperationResponse{Code: CodeInvalidParam, Msg: "参数无效"}, nil
+		return &pb.PlayerOperationResponse{Code: errcode.ErrParam, Msg: "参数无效"}, nil
 	}
 
 	// 方向合法性校验
 	if direction < DirUp || direction > DirRight {
 		logger.Warn("gRPC PlayerOperation 方向非法", "player_id", playerID, "direction", direction)
-		return &pb.PlayerOperationResponse{Code: CodeInvalidParam, Msg: "方向参数无效"}, nil
+		return &pb.PlayerOperationResponse{Code: errcode.ErrParam, Msg: "方向参数无效"}, nil
 	}
 
 	// 如果 roomID 为空，通过玩家 ID 查找房间
@@ -218,7 +216,7 @@ func (s *GameServerImpl) PlayerOperation(ctx context.Context, req *pb.PlayerOper
 		roomID, ok = s.roomManager.GetPlayerRoom(playerID)
 		if !ok {
 			logger.Warn("gRPC PlayerOperation 玩家不在任何房间", "player_id", playerID)
-			return &pb.PlayerOperationResponse{Code: CodeRoomNotFound, Msg: "玩家未加入房间"}, nil
+			return &pb.PlayerOperationResponse{Code: errcode.ErrRoomNotExist, Msg: "玩家未加入房间"}, nil
 		}
 	}
 
@@ -226,14 +224,14 @@ func (s *GameServerImpl) PlayerOperation(ctx context.Context, req *pb.PlayerOper
 	room, ok := s.roomManager.GetRoom(roomID)
 	if !ok {
 		logger.Warn("gRPC PlayerOperation 房间不存在", "room_id", roomID)
-		return &pb.PlayerOperationResponse{Code: CodeRoomNotFound, Msg: "房间不存在"}, nil
+		return &pb.PlayerOperationResponse{Code: errcode.ErrRoomNotExist, Msg: "房间不存在"}, nil
 	}
 
 	// 调用房间的 HandlePlayerOperation 处理方向操作
 	room.HandlePlayerOperation(playerID, direction)
 
 	logger.Info("gRPC PlayerOperation 成功", "player_id", playerID, "room_id", roomID, "direction", direction)
-	return &pb.PlayerOperationResponse{Code: CodeSuccess, Msg: "操作成功"}, nil
+	return &pb.PlayerOperationResponse{Code: errcode.OK, Msg: "操作成功"}, nil
 }
 
 // PlayerOffline 玩家离线通知。
@@ -250,7 +248,7 @@ func (s *GameServerImpl) PlayerOffline(ctx context.Context, req *pb.PlayerOfflin
 	// 参数校验
 	if playerID == 0 {
 		logger.Warn("gRPC PlayerOffline 参数无效", "player_id", playerID)
-		return &pb.PlayerOfflineResponse{Code: CodeInvalidParam, Msg: "玩家 ID 不能为空"}, nil
+		return &pb.PlayerOfflineResponse{Code: errcode.ErrParam, Msg: "玩家 ID 不能为空"}, nil
 	}
 
 	// 如果 roomID 为空，通过玩家 ID 查找房间
@@ -263,13 +261,13 @@ func (s *GameServerImpl) PlayerOffline(ctx context.Context, req *pb.PlayerOfflin
 			if err := s.matchManager.RemoveFromMatchQueue(playerID); err != nil {
 				if errors.Is(err, ErrPlayerNotInQueue) {
 					logger.Info("gRPC PlayerOffline 玩家既不在房间也不在匹配队列", "player_id", playerID)
-					return &pb.PlayerOfflineResponse{Code: CodeSuccess, Msg: "玩家不在任何房间或队列中"}, nil
+					return &pb.PlayerOfflineResponse{Code: errcode.OK, Msg: "玩家不在任何房间或队列中"}, nil
 				}
 				logger.Warn("gRPC PlayerOffline 从匹配队列移除失败", "player_id", playerID, "error", err)
-				return &pb.PlayerOfflineResponse{Code: CodeOperationFail, Msg: "从匹配队列移除失败"}, nil
+				return &pb.PlayerOfflineResponse{Code: errcode.ErrSystem, Msg: "从匹配队列移除失败"}, nil
 			}
 			logger.Info("gRPC PlayerOffline 已从匹配队列移除", "player_id", playerID)
-			return &pb.PlayerOfflineResponse{Code: CodeSuccess, Msg: "已从匹配队列移除"}, nil
+			return &pb.PlayerOfflineResponse{Code: errcode.OK, Msg: "已从匹配队列移除"}, nil
 		}
 	}
 
@@ -277,7 +275,7 @@ func (s *GameServerImpl) PlayerOffline(ctx context.Context, req *pb.PlayerOfflin
 	room, ok := s.roomManager.GetRoom(roomID)
 	if !ok {
 		logger.Warn("gRPC PlayerOffline 房间不存在", "room_id", roomID)
-		return &pb.PlayerOfflineResponse{Code: CodeRoomNotFound, Msg: "房间不存在"}, nil
+		return &pb.PlayerOfflineResponse{Code: errcode.ErrRoomNotExist, Msg: "房间不存在"}, nil
 	}
 
 	// 处理房间内的离线逻辑
@@ -310,7 +308,7 @@ func (s *GameServerImpl) PlayerOffline(ctx context.Context, req *pb.PlayerOfflin
 				// 异步结束游戏，避免死锁
 				room.EndGame()
 				logger.Info("gRPC PlayerOffline 成功，已触发游戏结束", "player_id", playerID, "room_id", roomID)
-				return &pb.PlayerOfflineResponse{Code: CodeSuccess, Msg: "玩家离线，游戏已结束"}, nil
+				return &pb.PlayerOfflineResponse{Code: errcode.OK, Msg: "玩家离线，游戏已结束"}, nil
 			}
 		}
 	}
@@ -318,5 +316,35 @@ func (s *GameServerImpl) PlayerOffline(ctx context.Context, req *pb.PlayerOfflin
 	room.mu.Unlock()
 
 	logger.Info("gRPC PlayerOffline 成功", "player_id", playerID, "room_id", roomID)
-	return &pb.PlayerOfflineResponse{Code: CodeSuccess, Msg: "玩家离线处理成功"}, nil
+	return &pb.PlayerOfflineResponse{Code: errcode.OK, Msg: "玩家离线处理成功"}, nil
+}
+
+// GetGlobalRank 查询全服排行榜 Top100。
+// 调用排行榜工具查询 Redis ZSet，封装返回。
+func (s *GameServerImpl) GetGlobalRank(ctx context.Context, req *pb.GetGlobalRankRequest) (*pb.GetGlobalRankResponse, error) {
+	logger.Info("gRPC GetGlobalRank")
+
+	// 查询 Top100
+	items, err := utils.GetTopN(100)
+	if err != nil {
+		logger.Error("gRPC GetGlobalRank 查询排行榜失败", "error", err)
+		return &pb.GetGlobalRankResponse{Code: errcode.ErrSystem, Msg: "查询排行榜失败"}, nil
+	}
+
+	// 转换为 proto 格式
+	list := make([]*pb.RankItem, 0, len(items))
+	for _, item := range items {
+		list = append(list, &pb.RankItem{
+			PlayerId: item.PlayerID,
+			Score:    int32(item.Score),
+			Rank:     int32(item.Rank),
+		})
+	}
+
+	logger.Info("gRPC GetGlobalRank 成功", "count", len(list))
+	return &pb.GetGlobalRankResponse{
+		Code: errcode.OK,
+		Msg:  "查询成功",
+		List: list,
+	}, nil
 }

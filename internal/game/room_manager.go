@@ -105,9 +105,11 @@ func (m *RoomManager) StartCleanupRoutine() {
 	})
 }
 
-// cleanupEndedRooms 清理已结束超过 1 分钟的房间。
-// 扫描所有房间，找到已结束且结束时间超过 1 分钟的房间，
+// cleanupEndedRooms 清理已结束超过 30 秒的房间。
+// 扫描所有房间，找到已结束且结束时间超过 30 秒的房间，
 // 解绑玩家、释放资源、从管理器中移除。
+//
+// 30 秒延迟给客户端留出拉取结算信息、排行榜的时间。
 func (m *RoomManager) cleanupEndedRooms() {
 	var roomsToRemove []string
 	now := time.Now()
@@ -116,7 +118,7 @@ func (m *RoomManager) cleanupEndedRooms() {
 	m.rooms.Range(func(key, value any) bool {
 		room := value.(*Room)
 		room.mu.Lock()
-		if room.Status == RoomStatusEnded && !room.EndTime.IsZero() && now.Sub(room.EndTime) > 1*time.Minute {
+		if room.Status == RoomStatusEnded && !room.EndTime.IsZero() && now.Sub(room.EndTime) > 30*time.Second {
 			roomsToRemove = append(roomsToRemove, room.RoomID)
 		}
 		room.mu.Unlock()

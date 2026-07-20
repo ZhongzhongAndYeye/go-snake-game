@@ -862,6 +862,165 @@ func (x *PlayerOfflineResponse) GetMsg() string {
 	return ""
 }
 
+// GetGlobalRankRequest 查询全服排行榜请求
+type GetGlobalRankRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetGlobalRankRequest) Reset() {
+	*x = GetGlobalRankRequest{}
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetGlobalRankRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetGlobalRankRequest) ProtoMessage() {}
+
+func (x *GetGlobalRankRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetGlobalRankRequest.ProtoReflect.Descriptor instead.
+func (*GetGlobalRankRequest) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_rpc_game_proto_rawDescGZIP(), []int{14}
+}
+
+// GetGlobalRankResponse 查询全服排行榜响应
+type GetGlobalRankResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          int32                  `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"` // 业务状态码，0 成功，非 0 失败
+	Msg           string                 `protobuf:"bytes,2,opt,name=msg,proto3" json:"msg,omitempty"`    // 提示信息
+	List          []*RankItem            `protobuf:"bytes,3,rep,name=list,proto3" json:"list,omitempty"`  // 排行榜条目列表
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetGlobalRankResponse) Reset() {
+	*x = GetGlobalRankResponse{}
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetGlobalRankResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetGlobalRankResponse) ProtoMessage() {}
+
+func (x *GetGlobalRankResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetGlobalRankResponse.ProtoReflect.Descriptor instead.
+func (*GetGlobalRankResponse) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_rpc_game_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *GetGlobalRankResponse) GetCode() int32 {
+	if x != nil {
+		return x.Code
+	}
+	return 0
+}
+
+func (x *GetGlobalRankResponse) GetMsg() string {
+	if x != nil {
+		return x.Msg
+	}
+	return ""
+}
+
+func (x *GetGlobalRankResponse) GetList() []*RankItem {
+	if x != nil {
+		return x.List
+	}
+	return nil
+}
+
+// RankItem 排行榜条目
+type RankItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"` // 玩家 ID
+	Score         int32                  `protobuf:"varint,2,opt,name=score,proto3" json:"score,omitempty"`                       // 玩家得分
+	Rank          int32                  `protobuf:"varint,3,opt,name=rank,proto3" json:"rank,omitempty"`                         // 排名，从 1 开始
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RankItem) Reset() {
+	*x = RankItem{}
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RankItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RankItem) ProtoMessage() {}
+
+func (x *RankItem) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RankItem.ProtoReflect.Descriptor instead.
+func (*RankItem) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_rpc_game_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *RankItem) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *RankItem) GetScore() int32 {
+	if x != nil {
+		return x.Score
+	}
+	return 0
+}
+
+func (x *RankItem) GetRank() int32 {
+	if x != nil {
+		return x.Rank
+	}
+	return 0
+}
+
 var File_pkg_proto_rpc_game_proto protoreflect.FileDescriptor
 
 const file_pkg_proto_rpc_game_proto_rawDesc = "" +
@@ -926,14 +1085,24 @@ const file_pkg_proto_rpc_game_proto_rawDesc = "" +
 	"\aroom_id\x18\x02 \x01(\tR\x06roomId\"=\n" +
 	"\x15PlayerOfflineResponse\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x10\n" +
-	"\x03msg\x18\x02 \x01(\tR\x03msg2\xe6\x02\n" +
+	"\x03msg\x18\x02 \x01(\tR\x03msg\"\x16\n" +
+	"\x14GetGlobalRankRequest\"`\n" +
+	"\x15GetGlobalRankResponse\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x10\n" +
+	"\x03msg\x18\x02 \x01(\tR\x03msg\x12!\n" +
+	"\x04list\x18\x03 \x03(\v2\r.rpc.RankItemR\x04list\"Q\n" +
+	"\bRankItem\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x14\n" +
+	"\x05score\x18\x02 \x01(\x05R\x05score\x12\x12\n" +
+	"\x04rank\x18\x03 \x01(\x05R\x04rank2\xae\x03\n" +
 	"\vGameService\x12=\n" +
 	"\n" +
 	"StartMatch\x12\x16.rpc.StartMatchRequest\x1a\x17.rpc.StartMatchResponse\x12@\n" +
 	"\vCancelMatch\x12\x17.rpc.CancelMatchRequest\x1a\x18.rpc.CancelMatchResponse\x12@\n" +
 	"\vGetRoomInfo\x12\x17.rpc.GetRoomInfoRequest\x1a\x18.rpc.GetRoomInfoResponse\x12L\n" +
 	"\x0fPlayerOperation\x12\x1b.rpc.PlayerOperationRequest\x1a\x1c.rpc.PlayerOperationResponse\x12F\n" +
-	"\rPlayerOffline\x12\x19.rpc.PlayerOfflineRequest\x1a\x1a.rpc.PlayerOfflineResponseB\x13Z\x11pkg/proto/rpc;rpcb\x06proto3"
+	"\rPlayerOffline\x12\x19.rpc.PlayerOfflineRequest\x1a\x1a.rpc.PlayerOfflineResponse\x12F\n" +
+	"\rGetGlobalRank\x12\x19.rpc.GetGlobalRankRequest\x1a\x1a.rpc.GetGlobalRankResponseB\x13Z\x11pkg/proto/rpc;rpcb\x06proto3"
 
 var (
 	file_pkg_proto_rpc_game_proto_rawDescOnce sync.Once
@@ -947,7 +1116,7 @@ func file_pkg_proto_rpc_game_proto_rawDescGZIP() []byte {
 	return file_pkg_proto_rpc_game_proto_rawDescData
 }
 
-var file_pkg_proto_rpc_game_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_pkg_proto_rpc_game_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_pkg_proto_rpc_game_proto_goTypes = []any{
 	(*Point)(nil),                   // 0: rpc.Point
 	(*SnakeState)(nil),              // 1: rpc.SnakeState
@@ -963,6 +1132,9 @@ var file_pkg_proto_rpc_game_proto_goTypes = []any{
 	(*PlayerOperationResponse)(nil), // 11: rpc.PlayerOperationResponse
 	(*PlayerOfflineRequest)(nil),    // 12: rpc.PlayerOfflineRequest
 	(*PlayerOfflineResponse)(nil),   // 13: rpc.PlayerOfflineResponse
+	(*GetGlobalRankRequest)(nil),    // 14: rpc.GetGlobalRankRequest
+	(*GetGlobalRankResponse)(nil),   // 15: rpc.GetGlobalRankResponse
+	(*RankItem)(nil),                // 16: rpc.RankItem
 }
 var file_pkg_proto_rpc_game_proto_depIdxs = []int32{
 	0,  // 0: rpc.SnakeState.body:type_name -> rpc.Point
@@ -970,21 +1142,24 @@ var file_pkg_proto_rpc_game_proto_depIdxs = []int32{
 	3,  // 2: rpc.GetRoomInfoResponse.players:type_name -> rpc.PlayerInfo
 	1,  // 3: rpc.GetRoomInfoResponse.snakes:type_name -> rpc.SnakeState
 	2,  // 4: rpc.GetRoomInfoResponse.food:type_name -> rpc.FoodState
-	4,  // 5: rpc.GameService.StartMatch:input_type -> rpc.StartMatchRequest
-	6,  // 6: rpc.GameService.CancelMatch:input_type -> rpc.CancelMatchRequest
-	8,  // 7: rpc.GameService.GetRoomInfo:input_type -> rpc.GetRoomInfoRequest
-	10, // 8: rpc.GameService.PlayerOperation:input_type -> rpc.PlayerOperationRequest
-	12, // 9: rpc.GameService.PlayerOffline:input_type -> rpc.PlayerOfflineRequest
-	5,  // 10: rpc.GameService.StartMatch:output_type -> rpc.StartMatchResponse
-	7,  // 11: rpc.GameService.CancelMatch:output_type -> rpc.CancelMatchResponse
-	9,  // 12: rpc.GameService.GetRoomInfo:output_type -> rpc.GetRoomInfoResponse
-	11, // 13: rpc.GameService.PlayerOperation:output_type -> rpc.PlayerOperationResponse
-	13, // 14: rpc.GameService.PlayerOffline:output_type -> rpc.PlayerOfflineResponse
-	10, // [10:15] is the sub-list for method output_type
-	5,  // [5:10] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	16, // 5: rpc.GetGlobalRankResponse.list:type_name -> rpc.RankItem
+	4,  // 6: rpc.GameService.StartMatch:input_type -> rpc.StartMatchRequest
+	6,  // 7: rpc.GameService.CancelMatch:input_type -> rpc.CancelMatchRequest
+	8,  // 8: rpc.GameService.GetRoomInfo:input_type -> rpc.GetRoomInfoRequest
+	10, // 9: rpc.GameService.PlayerOperation:input_type -> rpc.PlayerOperationRequest
+	12, // 10: rpc.GameService.PlayerOffline:input_type -> rpc.PlayerOfflineRequest
+	14, // 11: rpc.GameService.GetGlobalRank:input_type -> rpc.GetGlobalRankRequest
+	5,  // 12: rpc.GameService.StartMatch:output_type -> rpc.StartMatchResponse
+	7,  // 13: rpc.GameService.CancelMatch:output_type -> rpc.CancelMatchResponse
+	9,  // 14: rpc.GameService.GetRoomInfo:output_type -> rpc.GetRoomInfoResponse
+	11, // 15: rpc.GameService.PlayerOperation:output_type -> rpc.PlayerOperationResponse
+	13, // 16: rpc.GameService.PlayerOffline:output_type -> rpc.PlayerOfflineResponse
+	15, // 17: rpc.GameService.GetGlobalRank:output_type -> rpc.GetGlobalRankResponse
+	12, // [12:18] is the sub-list for method output_type
+	6,  // [6:12] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_pkg_proto_rpc_game_proto_init() }
@@ -998,7 +1173,7 @@ func file_pkg_proto_rpc_game_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_pkg_proto_rpc_game_proto_rawDesc), len(file_pkg_proto_rpc_game_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

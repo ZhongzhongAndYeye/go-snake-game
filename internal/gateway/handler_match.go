@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"go-snake-game/pkg/errcode"
 	"go-snake-game/pkg/logger"
 	"go-snake-game/pkg/network"
 	"go-snake-game/pkg/proto/msg"
@@ -19,7 +20,7 @@ func MatchStartHandler(s *Session, packet *network.Packet) {
 	// 校验玩家是否已登录
 	if playerID == 0 {
 		logger.Warn("匹配请求未登录", "session_id", s.logID())
-		s.SendError(ErrCodeNotLogin, "请先登录")
+		s.SendError(errcode.ErrNotLogin, "请先登录")
 		return
 	}
 
@@ -32,7 +33,7 @@ func MatchStartHandler(s *Session, packet *network.Packet) {
 	resp, err := GlobalGameClient.StartMatch(ctx, playerID, "")
 	if err != nil {
 		logger.Error("调用游戏服发起匹配接口失败", "session_id", s.logID(), "player_id", playerID, "error", err)
-		s.SendError(ErrCodeSystemError, "匹配失败，请稍后重试")
+		s.SendError(errcode.ErrSystem, "匹配失败，请稍后重试")
 		return
 	}
 
@@ -48,7 +49,7 @@ func MatchStartHandler(s *Session, packet *network.Packet) {
 	body, err := proto.Marshal(matchResp)
 	if err != nil {
 		logger.Error("匹配响应序列化失败", "session_id", s.logID(), "player_id", playerID, "error", err)
-		s.SendError(ErrCodeSystemError, "系统错误")
+		s.SendError(errcode.ErrSystem, "系统错误")
 		return
 	}
 
@@ -70,7 +71,7 @@ func MatchCancelHandler(s *Session, packet *network.Packet) {
 	// 校验玩家是否已登录
 	if playerID == 0 {
 		logger.Warn("取消匹配请求未登录", "session_id", s.logID())
-		s.SendError(ErrCodeNotLogin, "请先登录")
+		s.SendError(errcode.ErrNotLogin, "请先登录")
 		return
 	}
 
@@ -82,7 +83,7 @@ func MatchCancelHandler(s *Session, packet *network.Packet) {
 	resp, err := GlobalGameClient.CancelMatch(ctx, playerID)
 	if err != nil {
 		logger.Error("调用游戏服取消匹配接口失败", "session_id", s.logID(), "player_id", playerID, "error", err)
-		s.SendError(ErrCodeSystemError, "取消匹配失败，请稍后重试")
+		s.SendError(errcode.ErrSystem, "取消匹配失败，请稍后重试")
 		return
 	}
 
@@ -96,7 +97,7 @@ func MatchCancelHandler(s *Session, packet *network.Packet) {
 	body, err := proto.Marshal(cancelResp)
 	if err != nil {
 		logger.Error("取消匹配响应序列化失败", "session_id", s.logID(), "player_id", playerID, "error", err)
-		s.SendError(ErrCodeSystemError, "系统错误")
+		s.SendError(errcode.ErrSystem, "系统错误")
 		return
 	}
 

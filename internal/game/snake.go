@@ -2,6 +2,7 @@ package game
 
 import (
 	"math/rand"
+	"time"
 )
 
 // 方向枚举，用于标识蛇的当前移动方向或方向变更请求
@@ -34,13 +35,17 @@ type Point struct {
 
 // Snake 表示一条贪吃蛇，由单个玩家控制
 type Snake struct {
-	PlayerID  uint64  // 玩家 ID，唯一标识所属玩家
-	Nickname  string  // 玩家昵称，用于显示
-	Body      []Point // 蛇身坐标列表，索引 0 为蛇头，后续为身体和尾部
-	Direction int     // 当前移动方向，取值为 DirUp / DirDown / DirLeft / DirRight
-	Score     int     // 当前得分，每吃到一个食物增加
-	IsAlive   bool    // 是否存活，蛇撞墙或撞自身后置为 false
+	PlayerID   uint64    // 玩家 ID，唯一标识所属玩家
+	Nickname   string    // 玩家昵称，用于显示
+	Body       []Point   // 蛇身坐标列表，索引 0 为蛇头，后续为身体和尾部
+	Direction  int       // 当前移动方向，取值为 DirUp / DirDown / DirLeft / DirRight
+	Score      int       // 当前得分，每吃到一个食物增加
+	IsAlive    bool      // 是否存活，蛇撞墙或撞自身后置为 false
+	lastOpTime time.Time // 上次操作时间，用于频率限制
 }
+
+// 操作频率限制，每 100ms 最多接受 1 次方向操作。
+const opRateLimitInterval = 100 * time.Millisecond
 
 // Food 表示地图上的一个食物
 type Food struct {

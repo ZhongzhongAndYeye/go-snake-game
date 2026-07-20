@@ -50,6 +50,7 @@ func NewGatewayServer(listenAddr string) *GatewayServer {
 	router.Register(network.MsgIDMatchCancelReq, MatchCancelHandler)     // 2003：取消匹配
 	router.Register(network.MsgIDGameOperationReq, GameOperationHandler) // 3001：游戏操作
 	router.Register(network.MsgIDGameRoomInfoReq, RoomInfoQueryHandler)  // 2006：查询房间信息
+	router.Register(network.MsgIDRankQueryReq, RankQueryHandler)         // 3005：查询排行榜
 
 	return &GatewayServer{
 		listenAddr: listenAddr,

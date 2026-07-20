@@ -24,17 +24,23 @@ type GatewayConfig struct {
 	LoginRpcAddr     string `mapstructure:"login_rpc_addr"`    // 登录服 gRPC 地址
 	GameRpcAddr      string `mapstructure:"game_rpc_addr"`     // 游戏服 gRPC 地址
 	HeartbeatTimeout int    `mapstructure:"heartbeat_timeout"` // 心跳超时（秒），超时断开连接
+	PprofEnabled     bool   `mapstructure:"pprof_enabled"`     // 是否开启 pprof 性能分析
+	PprofAddr        string `mapstructure:"pprof_addr"`        // pprof 监听地址，如 ":8081"
 }
 
 // LoginConfig 登录服 — 账号认证、登录流程
 type LoginConfig struct {
-	GrpcAddr string `mapstructure:"grpc_addr"` // gRPC 服务监听地址
+	GrpcAddr     string `mapstructure:"grpc_addr"`     // gRPC 服务监听地址
+	PprofEnabled bool   `mapstructure:"pprof_enabled"` // 是否开启 pprof 性能分析
+	PprofAddr    string `mapstructure:"pprof_addr"`    // pprof 监听地址，如 ":8091"
 }
 
 // GameConfig 游戏逻辑服 — 对战逻辑
 type GameConfig struct {
 	GrpcAddr       string `mapstructure:"grpc_addr"`        // gRPC 服务监听地址
 	GatewayRpcAddr string `mapstructure:"gateway_rpc_addr"` // 网关 gRPC 推送服务地址
+	PprofEnabled   bool   `mapstructure:"pprof_enabled"`    // 是否开启 pprof 性能分析
+	PprofAddr      string `mapstructure:"pprof_addr"`       // pprof 监听地址，如 ":8092"
 }
 
 // MysqlConfig MySQL 数据库配置

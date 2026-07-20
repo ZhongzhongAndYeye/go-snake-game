@@ -11,15 +11,21 @@ gateway:
   login_rpc_addr: "127.0.0.1:9001"  # 登录服 gRPC 地址
   game_rpc_addr: "127.0.0.1:9002"   # 游戏服 gRPC 地址
   heartbeat_timeout: 60          # 心跳超时（秒），超时断开连接
+  pprof_enabled: true            # 是否开启 pprof 性能分析
+  pprof_addr: ":8081"            # pprof 监听地址
 
 # 登录服 
 login:
   grpc_addr: "0.0.0.0:9001"     # gRPC 服务监听地址
+  pprof_enabled: true            # 是否开启 pprof 性能分析
+  pprof_addr: ":8091"            # pprof 监听地址
 
 # 游戏逻辑服
 game:
   grpc_addr: "0.0.0.0:9002"         # gRPC 服务监听地址
   gateway_rpc_addr: "127.0.0.1:9000" # 网关 gRPC 推送服务地址
+  pprof_enabled: true                # 是否开启 pprof 性能分析
+  pprof_addr: ":8092"                # pprof 监听地址
 
 # MySQL 数据库
 mysql:

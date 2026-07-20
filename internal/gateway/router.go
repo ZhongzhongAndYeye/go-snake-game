@@ -5,6 +5,7 @@ import (
 
 	"go-snake-game/pkg/logger"
 	"go-snake-game/pkg/network"
+	"go-snake-game/pkg/utils"
 )
 
 // 【路由】
@@ -32,15 +33,16 @@ type Router struct {
 }
 
 // NewRouter 创建路由器实例。
-// 默认挂载 LogMiddleware 日志中间件，自动记录每条消息的处理耗时。
+// 默认挂载 TraceMiddleware 和 LogMiddleware，自动为每条消息生成 TraceID 并记录处理耗时。
 func NewRouter() *Router {
 	r := &Router{
 		routes:       make(map[uint16]HandlerFunc),
 		publicRoutes: make(map[uint16]HandlerFunc),
 		middlewares:  make([]MiddlewareFunc, 0),
 	}
-	// 默认挂载日志中间件，自动记录每条消息的 msg_id、seq_id、处理耗时
-	// 同时捕获业务 Handler 的 panic，防止单个消息崩溃导致整个连接断开
+	// 1. TraceMiddleware：最先执行，为每条请求生成唯一 TraceID，注入 Session
+	r.Use(TraceMiddleware)
+	// 2. LogMiddleware：记录每条消息的 msg_id、seq_id、处理耗时，捕获 panic
 	r.Use(LogMiddleware)
 	return r
 }
@@ -97,7 +99,9 @@ func (r *Router) Use(mw MiddlewareFunc) {
 func (r *Router) Handle(s *Session, packet *network.Packet) error {
 	// 第一步：优先检查免鉴权路由表
 	// 心跳(1001)、注册(1006)、登录(1003) 等免鉴权消息直接执行，不经过中间件链
+	// 但需要手动生成 TraceID，因为 public routes 不经过 TraceMiddleware
 	if handler, ok := r.publicRoutes[packet.MsgID]; ok {
+		s.SetTraceID(utils.GenerateTraceID())
 		handler(s, packet)
 		return nil // 若是，直接调用指令函数，无需中间件
 	}

@@ -33,31 +33,33 @@ func NewLoginServer() *LoginServerImpl {
 
 // Register 注册账号。
 func (s *LoginServerImpl) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
-	logger.Info("gRPC Register", "username", req.GetUsername())
+	traceLog := logger.WithTraceID(utils.GetTraceIDFromMetadata(ctx))
+	traceLog.Info("gRPC Register", "username", req.GetUsername())
 
 	playerID, err := s.svc.Register(req.GetUsername(), req.GetPassword())
 	if err != nil {
 		code, msg := mapRegisterError(err)
-		logger.Warn("gRPC Register failed", "username", req.GetUsername(), "code", code, "error", err)
+		traceLog.Warn("gRPC Register failed", "username", req.GetUsername(), "code", code, "error", err)
 		return &pb.RegisterResponse{Code: code, Msg: msg}, nil
 	}
 
-	logger.Info("gRPC Register success", "player_id", playerID)
+	traceLog.Info("gRPC Register success", "player_id", playerID)
 	return &pb.RegisterResponse{Code: errcode.OK, Msg: "注册成功", PlayerId: playerID}, nil
 }
 
 // Login 账号登录。
 func (s *LoginServerImpl) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
-	logger.Info("gRPC Login", "username", req.GetUsername())
+	traceLog := logger.WithTraceID(utils.GetTraceIDFromMetadata(ctx))
+	traceLog.Info("gRPC Login", "username", req.GetUsername())
 
 	playerID, nickname, token, err := s.svc.Login(req.GetUsername(), req.GetPassword())
 	if err != nil {
 		code, msg := mapLoginError(err)
-		logger.Warn("gRPC Login failed", "username", req.GetUsername(), "code", code, "error", err)
+		traceLog.Warn("gRPC Login failed", "username", req.GetUsername(), "code", code, "error", err)
 		return &pb.LoginResponse{Code: code, Msg: msg}, nil
 	}
 
-	logger.Info("gRPC Login success", "player_id", playerID)
+	traceLog.Info("gRPC Login success", "player_id", playerID)
 	return &pb.LoginResponse{
 		Code:     errcode.OK,
 		Msg:      "登录成功",
@@ -69,14 +71,16 @@ func (s *LoginServerImpl) Login(ctx context.Context, req *pb.LoginRequest) (*pb.
 
 // VerifyToken 校验 Token。
 func (s *LoginServerImpl) VerifyToken(ctx context.Context, req *pb.VerifyTokenRequest) (*pb.VerifyTokenResponse, error) {
+	traceLog := logger.WithTraceID(utils.GetTraceIDFromMetadata(ctx))
+
 	playerID, err := s.svc.VerifyToken(req.GetToken())
 	if err != nil {
 		code, msg := mapVerifyTokenError(err)
-		logger.Warn("gRPC VerifyToken failed", "code", code, "error", err)
+		traceLog.Warn("gRPC VerifyToken failed", "code", code, "error", err)
 		return &pb.VerifyTokenResponse{Code: code, Msg: msg}, nil
 	}
 
-	logger.Info("gRPC VerifyToken success", "player_id", playerID)
+	traceLog.Info("gRPC VerifyToken success", "player_id", playerID)
 	return &pb.VerifyTokenResponse{Code: errcode.OK, Msg: "Token 有效", PlayerId: playerID}, nil
 }
 

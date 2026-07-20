@@ -10,6 +10,7 @@ import (
 	"go-snake-game/internal/game"
 	"go-snake-game/pkg/config"
 	"go-snake-game/pkg/db"
+	"go-snake-game/pkg/health"
 	"go-snake-game/pkg/logger"
 	pb "go-snake-game/pkg/proto/rpc"
 
@@ -53,7 +54,12 @@ func main() {
 	gatewayRpcAddr := config.GlobalCfg.Game.GatewayRpcAddr
 	game.InitGatewayRpcClient(gatewayRpcAddr)
 
-	// 6. 创建 gRPC 服务并注册 GameService
+	// 6. 启动 pprof 性能分析与健康检查（独立端口）
+	if config.GlobalCfg.Game.PprofEnabled {
+		health.StartPprofServer("game", config.GlobalCfg.Game.PprofAddr)
+	}
+
+	// 7. 创建 gRPC 服务并注册 GameService
 	grpcServer := grpc.NewServer()
 	gameServer := game.NewGameServer()
 	pb.RegisterGameServiceServer(grpcServer, gameServer)

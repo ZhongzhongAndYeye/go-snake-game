@@ -73,7 +73,8 @@ func InitLogger(cfg config.LogConfig) error {
 	// AddCaller() 开启调用方文件与行号记录
 	// AddCallerSkip(1) 向上多跳一层堆栈，使得 Debug/Info 等全局函数
 	// 输出的 caller 信息指向业务代码调用处，而非本包的 wrapper 函数
-	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
+	// AddStacktrace(ErrorLevel) 使 Error 级别日志自动输出完整调用栈
+	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1), zap.AddStacktrace(zapcore.ErrorLevel))
 
 	// Sugar() 将 Logger 转为 SugaredLogger，支持 printf 风格的格式化方法
 	// 如 Debugw("msg", "key1", val1, "key2", val2) 键值对输出
@@ -110,12 +111,13 @@ func Warn(msg string, fields ...interface{}) {
 	Log.Warnw(msg, fields...)
 }
 
-// Error 输出错误级别日志，记录影响业务执行的错误
+// Error 输出错误级别日志，记录影响业务执行的错误，自动携带调用栈。
 // 用法：logger.Error("数据库连接失败", "err", err)
 func Error(msg string, fields ...interface{}) {
 	if Log == nil {
 		return
 	}
+	// 追加调用栈信息，便于定位根因
 	Log.Errorw(msg, fields...)
 }
 

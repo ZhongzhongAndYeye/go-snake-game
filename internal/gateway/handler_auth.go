@@ -1,9 +1,7 @@
 package gateway
 
 import (
-	"context"
 	"errors"
-	"time"
 
 	"go-snake-game/pkg/errcode"
 	"go-snake-game/pkg/logger"
@@ -34,8 +32,8 @@ func RegisterHandler(s *Session, packet *network.Packet) {
 		return
 	}
 
-	// 创建 gRPC 请求上下文（5秒超时）
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// 创建 gRPC 请求上下文（5秒超时 + TraceID 透传）
+	ctx, cancel := contextWithTraceID(s)
 	defer cancel()
 
 	// 调用登录服 gRPC 注册接口
@@ -53,20 +51,7 @@ func RegisterHandler(s *Session, packet *network.Packet) {
 		PlayerId: resp.PlayerId,
 	}
 
-	// 序列化响应体
-	body, err := proto.Marshal(registerResp)
-	if err != nil {
-		logger.Error("注册响应序列化失败", "session_id", s.logID(), "username", username, "error", err)
-		s.SendError(errcode.ErrSystem, "系统错误")
-		return
-	}
-
-	// 发送响应给客户端
-	s.Send(&network.Packet{
-		MsgID: network.MsgIDRegisterResp,
-		SeqID: packet.SeqID,
-		Body:  body,
-	})
+	s.SendProtoResponse(network.MsgIDRegisterResp, packet.SeqID, registerResp)
 
 	logger.Info("注册响应发送成功", "session_id", s.logID(), "username", username, "player_id", resp.PlayerId, "code", resp.Code)
 }
@@ -92,8 +77,8 @@ func LoginHandler(s *Session, packet *network.Packet) {
 		return
 	}
 
-	// 创建 gRPC 请求上下文（5秒超时）
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// 创建 gRPC 请求上下文（5秒超时 + TraceID 透传）
+	ctx, cancel := contextWithTraceID(s)
 	defer cancel()
 
 	// 调用登录服 gRPC 登录接口
@@ -119,20 +104,7 @@ func LoginHandler(s *Session, packet *network.Packet) {
 		PlayerId: int64(resp.PlayerId),
 	}
 
-	// 序列化响应体
-	body, err := proto.Marshal(loginResp)
-	if err != nil {
-		logger.Error("登录响应序列化失败", "session_id", s.logID(), "username", username, "error", err)
-		s.SendError(errcode.ErrSystem, "系统错误")
-		return
-	}
-
-	// 发送响应给客户端
-	s.Send(&network.Packet{
-		MsgID: network.MsgIDLoginResp,
-		SeqID: packet.SeqID,
-		Body:  body,
-	})
+	s.SendProtoResponse(network.MsgIDLoginResp, packet.SeqID, loginResp)
 
 	logger.Info("登录响应发送成功", "session_id", s.logID(), "username", username, "player_id", resp.PlayerId, "code", resp.Code)
 }

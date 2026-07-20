@@ -26,6 +26,7 @@ type Session struct {
 	isOnline      bool            // 是否在线
 	isLogin       bool            // 是否已登录
 	lastHeartbeat time.Time       // 最后心跳时间
+	traceID       string          // 当前请求的 TraceID，用于全链路追踪
 
 	readCh  chan *network.Packet // 读通道：接收客户端消息（缓冲 1024）
 	writeCh chan *network.Packet // 写通道：发送消息给客户端（缓冲 1024）
@@ -270,6 +271,16 @@ func (s *Session) logID() string {
 		return fmt.Sprintf("%d@%s", s.sessionID, s.conn.RemoteAddr().String())
 	}
 	return s.conn.RemoteAddr().String()
+}
+
+// SetTraceID 设置当前请求的 TraceID，用于全链路日志追踪。
+func (s *Session) SetTraceID(id string) {
+	s.traceID = id
+}
+
+// TraceID 返回当前请求的 TraceID。
+func (s *Session) TraceID() string {
+	return s.traceID
 }
 
 // wsReader 包装 []byte 实现 io.Reader，用于 Decode 解码。

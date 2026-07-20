@@ -1,9 +1,7 @@
 package gateway
 
 import (
-	"context"
 	"errors"
-	"time"
 
 	"go-snake-game/pkg/errcode"
 	"go-snake-game/pkg/logger"
@@ -45,7 +43,7 @@ func AuthMiddleware(next HandlerFunc) HandlerFunc {
 		}
 
 		// 步骤3：调用登录服 VerifyToken 接口校验 Token
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := contextWithTraceID(s)
 		defer cancel()
 
 		resp, err := GlobalLoginClient.VerifyToken(ctx, token)

@@ -10,6 +10,7 @@ import (
 	"go-snake-game/internal/login"
 	"go-snake-game/pkg/config"
 	"go-snake-game/pkg/db"
+	"go-snake-game/pkg/health"
 	"go-snake-game/pkg/logger"
 	pb "go-snake-game/pkg/proto/rpc"
 
@@ -49,7 +50,12 @@ func main() {
 		PoolTimeout:  config.GlobalCfg.Redis.PoolTimeout,
 	})
 
-	// 5. 创建 gRPC 服务并注册 LoginService
+	// 5. 启动 pprof 性能分析与健康检查（独立端口）
+	if config.GlobalCfg.Login.PprofEnabled {
+		health.StartPprofServer("login", config.GlobalCfg.Login.PprofAddr)
+	}
+
+	// 6. 创建 gRPC 服务并注册 LoginService
 	grpcServer := grpc.NewServer()
 	loginServer := login.NewLoginServer()
 	pb.RegisterLoginServiceServer(grpcServer, loginServer)

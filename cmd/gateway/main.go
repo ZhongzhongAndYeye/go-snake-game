@@ -10,6 +10,7 @@ import (
 
 	"go-snake-game/internal/gateway"
 	"go-snake-game/pkg/config"
+	"go-snake-game/pkg/health"
 	"go-snake-game/pkg/logger"
 	pb "go-snake-game/pkg/proto/rpc"
 
@@ -37,7 +38,12 @@ func main() {
 	logger.Info("初始化游戏服 gRPC 连接", "addr", gameRpcAddr)
 	gateway.InitGameRpcClient(gameRpcAddr)
 
-	// 5. 启动 WebSocket 监听服务
+	// 5. 启动 pprof 性能分析与健康检查（独立端口）
+	if config.GlobalCfg.Gateway.PprofEnabled {
+		health.StartPprofServer("gateway", config.GlobalCfg.Gateway.PprofAddr)
+	}
+
+	// 6. 启动 WebSocket 监听服务
 	listenAddr := config.GlobalCfg.Gateway.ListenAddr
 	logger.Info("网关 WebSocket 服务启动", "listen_addr", listenAddr)
 

@@ -8,6 +8,9 @@ import (
 
 	"go-snake-game/pkg/logger"
 	"go-snake-game/pkg/network"
+	"go-snake-game/pkg/utils"
+
+	"google.golang.org/grpc/metadata"
 )
 
 // 【session 管理器】
@@ -109,7 +112,13 @@ func (m *SessionManager) RemoveSession(sessionID uint64) {
 		// 如果玩家已登录，通知游戏服离线
 		if s.playerID > 0 {
 			logger.Info("玩家离线，通知游戏服", "player_id", s.playerID, "room_id", s.RoomID)
-			_, _ = GlobalGameClient.PlayerOffline(context.Background(), s.playerID, s.RoomID)
+			// 断开连接时生成新的 TraceID，透传到游戏服
+			traceID := utils.GenerateTraceID()
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			md := metadata.Pairs(utils.TraceIDKey, traceID)
+			ctx = metadata.NewOutgoingContext(ctx, md)
+			_, _ = GlobalGameClient.PlayerOffline(ctx, s.playerID, s.RoomID)
+			cancel()
 		}
 
 		// 如果会话在房间中，从房间分组移除

@@ -42,6 +42,9 @@ func NewGatewayServer(listenAddr string) *GatewayServer {
 	router.RegisterPublic(network.MsgIDRegisterReq, RegisterHandler)   // 1006：新用户注册账号
 	router.RegisterPublic(network.MsgIDLoginReq, LoginHandler)         // 1003：用户登录获取 Token
 
+	// 注册限流中间件，基于令牌桶算法对每个玩家独立限流
+	router.Use(RateLimitMiddleware)
+
 	// 注册鉴权中间件，后续 Register 的消息都会经过鉴权
 	router.Use(AuthMiddleware)
 

@@ -10,7 +10,10 @@ option go_package = "pkg/proto/msg";
 message HeartbeatReq {}
 
 // 心跳响应（服务端 → 客户端）
-message HeartbeatResp {}
+message HeartbeatResp {
+  int32  code = 1; // 状态码：0=成功
+  string msg  = 2; // 提示信息
+}
 
 // ---- 登录 ----
 

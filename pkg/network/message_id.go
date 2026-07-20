@@ -32,10 +32,11 @@ const (
 	MsgIDGameRoomInfoResp uint16 = 2007 // 游戏服 → 客户端：查询房间信息响应
 
 	// ---- 游戏战斗相关 ----
-	MsgIDGameOperationReq uint16 = 3001 // 客户端 → 游戏服：方向操作请求
-	MsgIDGameStartNotify  uint16 = 3002 // 游戏服 → 客户端：游戏开始广播
-	MsgIDGameStateSync    uint16 = 3003 // 游戏服 → 客户端：帧状态同步
-	MsgIDGameOverNotify   uint16 = 3004 // 游戏服 → 客户端：游戏结束广播
-	MsgIDRankQueryReq     uint16 = 3005 // 客户端 → 游戏服：排行榜查询请求
-	MsgIDRankQueryResp    uint16 = 3006 // 游戏服 → 客户端：排行榜查询响应
+	MsgIDGameOperationReq  uint16 = 3001 // 客户端 → 游戏服：方向操作请求
+	MsgIDGameOperationResp uint16 = 3007 // 游戏服 → 客户端：方向操作响应
+	MsgIDGameStartNotify   uint16 = 3002 // 游戏服 → 客户端：游戏开始广播
+	MsgIDGameStateSync     uint16 = 3003 // 游戏服 → 客户端：帧状态同步
+	MsgIDGameOverNotify    uint16 = 3004 // 游戏服 → 客户端：游戏结束广播
+	MsgIDRankQueryReq      uint16 = 3005 // 客户端 → 游戏服：排行榜查询请求
+	MsgIDRankQueryResp     uint16 = 3006 // 游戏服 → 客户端：排行榜查询响应
 )

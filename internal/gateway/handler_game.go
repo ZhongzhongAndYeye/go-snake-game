@@ -1,9 +1,6 @@
 package gateway
 
 import (
-	"context"
-	"time"
-
 	"go-snake-game/pkg/errcode"
 	"go-snake-game/pkg/logger"
 	"go-snake-game/pkg/network"
@@ -36,8 +33,8 @@ func GameOperationHandler(s *Session, packet *network.Packet) {
 	direction := req.GetDirection()
 	logger.Info("游戏操作请求", "session_id", s.logID(), "player_id", playerID, "direction", direction)
 
-	// 创建 gRPC 请求上下文（5秒超时）
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// 创建 gRPC 请求上下文（5秒超时 + TraceID 透传）
+	ctx, cancel := contextWithTraceID(s)
 	defer cancel()
 
 	// 调用游戏服 gRPC 玩家操作接口
@@ -50,12 +47,9 @@ func GameOperationHandler(s *Session, packet *network.Packet) {
 
 	logger.Info("游戏操作成功", "session_id", s.logID(), "player_id", playerID, "code", resp.Code, "msg", resp.Msg)
 
-	// 发送响应给客户端
-	respBody, _ := proto.Marshal(&msg.GameOperationResp{Code: int32(resp.Code), Msg: resp.Msg})
-	s.Send(&network.Packet{
-		MsgID: network.MsgIDGameOperationReq,
-		SeqID: packet.SeqID,
-		Body:  respBody,
+	s.SendProtoResponse(network.MsgIDGameOperationResp, packet.SeqID, &msg.GameOperationResp{
+		Code: int32(resp.Code),
+		Msg:  resp.Msg,
 	})
 }
 
@@ -81,8 +75,8 @@ func RoomInfoQueryHandler(s *Session, packet *network.Packet) {
 		}
 	}
 
-	// 创建 gRPC 请求上下文（5秒超时）
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// 创建 gRPC 请求上下文（5秒超时 + TraceID 透传）
+	ctx, cancel := contextWithTraceID(s)
 	defer cancel()
 
 	// 调用游戏服 gRPC 获取房间信息接口
@@ -93,20 +87,7 @@ func RoomInfoQueryHandler(s *Session, packet *network.Packet) {
 		return
 	}
 
-	// 将 rpc 响应序列化为 proto 发送给客户端
-	body, err := proto.Marshal(resp)
-	if err != nil {
-		logger.Error("房间信息响应序列化失败", "session_id", s.logID(), "player_id", playerID, "error", err)
-		s.SendError(errcode.ErrSystem, "系统错误")
-		return
-	}
-
-	// 发送响应给客户端
-	s.Send(&network.Packet{
-		MsgID: network.MsgIDGameRoomInfoResp,
-		SeqID: packet.SeqID,
-		Body:  body,
-	})
+	s.SendProtoResponse(network.MsgIDGameRoomInfoResp, packet.SeqID, resp)
 
 	logger.Info("房间信息查询响应发送成功", "session_id", s.logID(), "player_id", playerID, "room_id", resp.GetRoomId(), "status", resp.GetStatus())
 }
@@ -124,8 +105,8 @@ func RankQueryHandler(s *Session, packet *network.Packet) {
 		return
 	}
 
-	// 创建 gRPC 请求上下文（5秒超时）
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// 创建 gRPC 请求上下文（5秒超时 + TraceID 透传）
+	ctx, cancel := contextWithTraceID(s)
 	defer cancel()
 
 	// 调用游戏服 gRPC 获取排行榜接口
@@ -136,7 +117,7 @@ func RankQueryHandler(s *Session, packet *network.Packet) {
 		return
 	}
 
-	// 将 rpc 响应序列化为客户端消息
+	// 将 rpc 响应转换为客户端消息
 	rankResp := &msg.RankQueryResp{
 		Code: resp.Code,
 		Msg:  resp.Msg,
@@ -150,19 +131,7 @@ func RankQueryHandler(s *Session, packet *network.Packet) {
 		})
 	}
 
-	body, err := proto.Marshal(rankResp)
-	if err != nil {
-		logger.Error("排行榜响应序列化失败", "session_id", s.logID(), "player_id", playerID, "error", err)
-		s.SendError(errcode.ErrSystem, "系统错误")
-		return
-	}
-
-	// 发送响应给客户端
-	s.Send(&network.Packet{
-		MsgID: network.MsgIDRankQueryResp,
-		SeqID: packet.SeqID,
-		Body:  body,
-	})
+	s.SendProtoResponse(network.MsgIDRankQueryResp, packet.SeqID, rankResp)
 
 	logger.Info("排行榜查询响应发送成功", "session_id", s.logID(), "player_id", playerID, "count", len(rankResp.List))
 }

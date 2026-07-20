@@ -1,0 +1,43 @@
+// 网关推送服务 protobuf 定义
+// 游戏服可通过 gRPC 调用网关，向指定房间或单个玩家主动推送消息
+
+syntax = "proto3";
+
+package rpc;
+option go_package = "pkg/proto/rpc;rpc";
+
+// GatewayService 网关推送服务，提供房间广播和单推能力。
+// 游戏服通过此服务向网关发起推送请求，网关将消息通过 WebSocket 转发给客户端。
+service GatewayService {
+  // PushToRoom 向指定房间所有玩家广播消息
+  rpc PushToRoom(PushToRoomRequest) returns (PushToRoomResponse);
+  // PushToPlayer 向指定单个玩家发送消息
+  rpc PushToPlayer(PushToPlayerRequest) returns (PushToPlayerResponse);
+}
+
+// PushToRoomRequest 房间广播请求
+message PushToRoomRequest {
+  string room_id = 1; // 目标房间 ID
+  uint32 msg_id  = 2; // 消息 ID，对应 WebSocket 协议中的 MsgID
+  bytes  body    = 3; // 消息体，由调用方序列化后的 protobuf 二进制数据
+}
+
+// PushToRoomResponse 房间广播响应
+message PushToRoomResponse {
+  int32  code  = 1; // 业务状态码，0 成功，非 0 失败
+  string msg   = 2; // 提示信息
+  int32  count = 3; // 实际推送到的玩家数量
+}
+
+// PushToPlayerRequest 单推消息请求
+message PushToPlayerRequest {
+  uint64 player_id = 1; // 目标玩家 ID
+  uint32 msg_id    = 2; // 消息 ID，对应 WebSocket 协议中的 MsgID
+  bytes  body      = 3; // 消息体，由调用方序列化后的 protobuf 二进制数据
+}
+
+// PushToPlayerResponse 单推消息响应
+message PushToPlayerResponse {
+  int32  code = 1; // 业务状态码，0 成功，非 0 失败
+  string msg  = 2; // 提示信息
+}

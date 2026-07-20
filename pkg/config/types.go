@@ -17,9 +17,10 @@ type LogConfig struct {
 	File    string `mapstructure:"file"`    // 日志文件路径，为空表示不输出到文件
 }
 
-// GatewayConfig 网关服务 — WebSocket 接入层
+// GatewayConfig 网关服务 — WebSocket 接入层 + gRPC 推送服务
 type GatewayConfig struct {
 	ListenAddr       string `mapstructure:"listen_addr"`       // WebSocket 监听地址
+	GrpcAddr         string `mapstructure:"grpc_addr"`         // gRPC 推送服务监听地址
 	LoginRpcAddr     string `mapstructure:"login_rpc_addr"`    // 登录服 gRPC 地址
 	GameRpcAddr      string `mapstructure:"game_rpc_addr"`     // 游戏服 gRPC 地址
 	HeartbeatTimeout int    `mapstructure:"heartbeat_timeout"` // 心跳超时（秒），超时断开连接
@@ -32,7 +33,8 @@ type LoginConfig struct {
 
 // GameConfig 游戏逻辑服 — 对战逻辑
 type GameConfig struct {
-	GrpcAddr string `mapstructure:"grpc_addr"` // gRPC 服务监听地址
+	GrpcAddr       string `mapstructure:"grpc_addr"`        // gRPC 服务监听地址
+	GatewayRpcAddr string `mapstructure:"gateway_rpc_addr"` // 网关 gRPC 推送服务地址
 }
 
 // MysqlConfig MySQL 数据库配置

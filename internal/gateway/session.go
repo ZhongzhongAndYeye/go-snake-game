@@ -22,6 +22,7 @@ type Session struct {
 	conn          *websocket.Conn // WebSocket 连接
 	playerID      uint64          // 玩家 ID（登录后赋值，未登录为 0）
 	sessionID     uint64          // 会话 ID（由 SessionManager 分配）
+	RoomID        string          // 玩家当前所在房间 ID，空字符串代表不在房间
 	isOnline      bool            // 是否在线
 	isLogin       bool            // 是否已登录
 	lastHeartbeat time.Time       // 最后心跳时间

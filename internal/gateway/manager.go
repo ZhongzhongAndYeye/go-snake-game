@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"context"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -22,7 +23,7 @@ var (
 
 // SessionManager 全局会话连接管理器。
 // 负责管理所有在线玩家的 WebSocket 会话，提供会话的添加、删除、
-// 查询和遍历能力。所有方法都是并发安全的，无需外部加锁。
+// 查询、遍历及房间分组广播能力。所有方法都是并发安全的，无需外部加锁。
 type SessionManager struct {
 	// sessions 存储所有在线会话。
 	sessions sync.Map
@@ -41,6 +42,13 @@ type SessionManager struct {
 	// heartbeatStopCh 心跳检测扫描协程的停止信号通道。
 	// 调用 StopHeartbeatCheck 时关闭此通道，通知扫描协程退出。
 	heartbeatStopCh chan struct{}
+
+	// roomMu 保护 roomPlayers 的互斥锁。
+	roomMu sync.Mutex
+
+	// roomPlayers 房间分组映射，维护「房间 ID → 玩家 ID → 会话 ID」的对应关系。
+	// 用于支持房间内全员消息广播。
+	roomPlayers map[string]map[uint64]uint64
 }
 
 // GetManager 获取全局单例 SessionManager。
@@ -93,7 +101,23 @@ func (m *SessionManager) AddSession(s *Session) uint64 {
 //
 // 注意：RemoveSession 只会从管理器中移除记录，不会关闭会话本身。
 // 调用方需要先调用 session.Stop() 关闭连接和 goroutine。
+// 如果该会话在某个房间中，会自动从房间中移除，并通知游戏服玩家离线。
+// 如果玩家正在匹配中，也会通知游戏服从匹配队列移除。
 func (m *SessionManager) RemoveSession(sessionID uint64) {
+	// 获取会话信息，处理离线逻辑
+	if s := m.GetSession(sessionID); s != nil {
+		// 如果玩家已登录，通知游戏服离线
+		if s.playerID > 0 {
+			logger.Info("玩家离线，通知游戏服", "player_id", s.playerID, "room_id", s.RoomID)
+			GlobalGameClient.PlayerOffline(context.Background(), s.playerID, s.RoomID)
+		}
+
+		// 如果会话在房间中，从房间分组移除
+		if s.RoomID != "" {
+			m.LeaveRoom(s.playerID, s.RoomID)
+		}
+	}
+
 	// 从 sync.Map 中删除
 	m.sessions.Delete(sessionID)
 
@@ -149,6 +173,128 @@ func (m *SessionManager) Broadcast(pkt *network.Packet) {
 		s.Send(pkt) // 非阻塞发送
 		return true // 继续广播下一个会话
 	})
+}
+
+// findSessionIDByPlayerID 遍历查找玩家 ID 对应的会话 ID。
+// 时间复杂度 O(n)，仅在玩家加入房间时调用一次，不影响性能。
+func (m *SessionManager) findSessionIDByPlayerID(playerID uint64) (uint64, bool) {
+	var sessionID uint64
+	var found bool
+	m.sessions.Range(func(key, val interface{}) bool {
+		s := val.(*Session)
+		if s.playerID == playerID {
+			sessionID = key.(uint64)
+			found = true
+			return false
+		}
+		return true
+	})
+	return sessionID, found
+}
+
+// JoinRoom 将玩家加入指定房间分组。
+// 加入后，该玩家会收到 BroadcastToRoom 发送的房间内广播消息。
+// 如果玩家已在其他房间，会先自动离开原房间。
+func (m *SessionManager) JoinRoom(playerID uint64, roomID string) {
+	// 查找玩家对应的会话
+	sessionID, found := m.findSessionIDByPlayerID(playerID)
+	if !found {
+		logger.Warn("玩家加入房间失败：会话不存在", "player_id", playerID, "room_id", roomID)
+		return
+	}
+
+	// 获取会话，如果玩家已有房间则先离开
+	if s := m.GetSession(sessionID); s != nil {
+		if s.RoomID != "" && s.RoomID != roomID {
+			m.LeaveRoom(playerID, s.RoomID)
+		}
+		s.RoomID = roomID
+	}
+
+	m.roomMu.Lock()
+	if m.roomPlayers == nil {
+		m.roomPlayers = make(map[string]map[uint64]uint64)
+	}
+	if _, ok := m.roomPlayers[roomID]; !ok {
+		m.roomPlayers[roomID] = make(map[uint64]uint64)
+	}
+	m.roomPlayers[roomID][playerID] = sessionID
+	m.roomMu.Unlock()
+
+	logger.Info("玩家加入房间", "player_id", playerID, "room_id", roomID, "session_id", sessionID)
+}
+
+// LeaveRoom 将玩家从指定房间分组中移除。
+// 移除后，该玩家不再收到该房间的广播消息。
+func (m *SessionManager) LeaveRoom(playerID uint64, roomID string) {
+	m.roomMu.Lock()
+	if players, ok := m.roomPlayers[roomID]; ok {
+		delete(players, playerID)
+		if len(players) == 0 {
+			// 房间内没有玩家了，清理房间映射
+			delete(m.roomPlayers, roomID)
+		}
+	}
+	m.roomMu.Unlock()
+
+	// 清除会话上的 RoomID
+	m.sessions.Range(func(_, val interface{}) bool {
+		s := val.(*Session)
+		if s.playerID == playerID {
+			s.RoomID = ""
+			return false
+		}
+		return true
+	})
+
+	logger.Info("玩家离开房间", "player_id", playerID, "room_id", roomID)
+}
+
+// BroadcastToRoom 向指定房间内的所有玩家广播一条消息。
+// 遍历房间内所有玩家，通过会话发送消息。
+// Send 是非阻塞的，如果某个会话的写通道满了会自动丢弃该消息，不影响其他玩家。
+// 返回实际推送到的玩家数量。
+func (m *SessionManager) BroadcastToRoom(roomID string, pkt *network.Packet) int {
+	m.roomMu.Lock()
+	players, ok := m.roomPlayers[roomID]
+	if !ok || len(players) == 0 {
+		m.roomMu.Unlock()
+		return 0
+	}
+
+	// 复制会话 ID 列表，避免在发送过程中持有锁
+	sessionIDs := make([]uint64, 0, len(players))
+	for _, sid := range players {
+		sessionIDs = append(sessionIDs, sid)
+	}
+	m.roomMu.Unlock()
+
+	sentCount := 0
+	for _, sid := range sessionIDs {
+		if s := m.GetSession(sid); s != nil {
+			s.Send(pkt)
+			sentCount++
+		}
+	}
+
+	logger.Info("房间广播", "room_id", roomID, "player_count", sentCount, "msg_id", pkt.MsgID)
+	return sentCount
+}
+
+// GetSessionByPlayerID 按玩家 ID 查询会话。
+// 遍历所有在线会话，返回第一个匹配的会话。
+// 如果玩家不在线，返回 nil。
+func (m *SessionManager) GetSessionByPlayerID(playerID uint64) *Session {
+	var session *Session
+	m.sessions.Range(func(_, val interface{}) bool {
+		s := val.(*Session)
+		if s.playerID == playerID {
+			session = s
+			return false
+		}
+		return true
+	})
+	return session
 }
 
 // SetHeartbeatTimeout 设置心跳超时时间。

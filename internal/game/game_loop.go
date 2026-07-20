@@ -4,10 +4,15 @@ package game
 
 import (
 	"errors"
+	"sort"
 	"time"
 
 	"go-snake-game/internal/dao"
 	"go-snake-game/pkg/logger"
+	"go-snake-game/pkg/network"
+	"go-snake-game/pkg/proto/msg"
+
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -50,6 +55,9 @@ func (r *Room) StartGame() error {
 
 	r.mu.Unlock()
 
+	// 广播游戏开始消息（MsgID=3002）
+	r.broadcastGameStart()
+
 	logger.Info("游戏开始", "room_id", r.RoomID, "player_count", len(r.Players))
 
 	// 启动后台游戏主循环
@@ -85,6 +93,7 @@ func (r *Room) EndGame() {
 	}
 
 	r.GameStatus = GameStatusEnded
+	r.EndTime = time.Now()     // 记录结束时间，供定时清理判断
 	_ = r.setRoomEndedLocked() // 设置房间状态为已结束
 
 	// 计算玩家最终得分并更新数据库
@@ -101,6 +110,9 @@ func (r *Room) EndGame() {
 	}
 
 	r.mu.Unlock()
+
+	// 广播游戏结束消息（MsgID=3004）
+	r.broadcastGameOver()
 
 	logger.Info("游戏结束", "room_id", r.RoomID)
 }
@@ -195,6 +207,10 @@ func (r *Room) tick() {
 		go r.EndGame()
 	}
 
+	// 5. 广播帧状态同步（MsgID=3003）
+	// 释放锁后再进行 gRPC 调用，避免长时间持有锁影响其他操作
+	r.broadcastGameStateSync()
+
 	// 记录帧日志（每 10 帧输出一次，便于观察主循环运行状态）
 	if r.Frame%10 == 0 {
 		aliveNames := make([]uint64, 0)
@@ -219,4 +235,137 @@ func (r *Room) snakeList() []*Snake {
 		snakes = append(snakes, snake)
 	}
 	return snakes
+}
+
+// ---- 下行推送辅助方法 ----
+
+// broadcastGameStart 广播游戏开始消息（MsgID=3002）。
+// 获取锁读取数据后立即释放，再执行 gRPC 调用，避免长时间持有锁。
+func (r *Room) broadcastGameStart() {
+	r.mu.Lock()
+	notify := &msg.GameStartNotify{
+		MapWidth:  int32(r.MapWidth),
+		MapHeight: int32(r.MapHeight),
+		Snakes:    buildSnakeStates(r.Snakes),
+		Food:      buildFoodState(r.CurrentFood),
+	}
+	r.mu.Unlock()
+
+	body, err := proto.Marshal(notify)
+	if err != nil {
+		logger.Error("序列化 GameStartNotify 失败", "room_id", r.RoomID, "error", err)
+		return
+	}
+
+	GlobalGatewayClient.BroadcastRoomMsg(r.RoomID, network.MsgIDGameStartNotify, body)
+}
+
+// broadcastGameStateSync 广播帧状态同步消息（MsgID=3003）。
+// 调用前 r.mu 已持有，构建数据后释放锁再进行 gRPC 调用，避免阻塞其他操作。
+func (r *Room) broadcastGameStateSync() {
+	sync := &msg.GameStateSync{
+		Frame:  r.Frame,
+		Snakes: buildSnakeStates(r.Snakes),
+		Food:   buildFoodState(r.CurrentFood),
+	}
+
+	body, err := proto.Marshal(sync)
+	if err != nil {
+		logger.Error("序列化 GameStateSync 失败", "room_id", r.RoomID, "frame", r.Frame, "error", err)
+		return
+	}
+
+	// 释放锁后再进行 gRPC 调用
+	r.mu.Unlock()
+	GlobalGatewayClient.BroadcastRoomMsg(r.RoomID, network.MsgIDGameStateSync, body)
+	r.mu.Lock()
+}
+
+// broadcastGameOver 广播游戏结束消息（MsgID=3004）。
+// 获取锁读取数据后立即释放，再执行 gRPC 调用，避免长时间持有锁。
+func (r *Room) broadcastGameOver() {
+	r.mu.Lock()
+	notify := &msg.GameOverNotify{
+		Ranks: buildPlayerRanks(r.Players, r.Snakes),
+	}
+	r.mu.Unlock()
+
+	body, err := proto.Marshal(notify)
+	if err != nil {
+		logger.Error("序列化 GameOverNotify 失败", "room_id", r.RoomID, "error", err)
+		return
+	}
+
+	GlobalGatewayClient.BroadcastRoomMsg(r.RoomID, network.MsgIDGameOverNotify, body)
+}
+
+// buildSnakeStates 将 Snakes map 转换为 proto 的 SnakeState 列表。
+// 调用方必须持有 r.mu 锁。
+func buildSnakeStates(snakes map[uint64]*Snake) []*msg.SnakeState {
+	states := make([]*msg.SnakeState, 0, len(snakes))
+	for _, snake := range snakes {
+		body := make([]*msg.Point, 0, len(snake.Body))
+		for _, pt := range snake.Body {
+			body = append(body, &msg.Point{X: int32(pt.X), Y: int32(pt.Y)})
+		}
+		states = append(states, &msg.SnakeState{
+			PlayerId: snake.PlayerID,
+			Nickname: snake.Nickname,
+			Body:     body,
+			Score:    int32(snake.Score),
+			IsAlive:  snake.IsAlive,
+		})
+	}
+	return states
+}
+
+// buildFoodState 将 Food 转换为 proto 的 FoodState。
+// 调用方必须持有 r.mu 锁。
+func buildFoodState(food *Food) *msg.FoodState {
+	if food == nil {
+		return nil
+	}
+	return &msg.FoodState{
+		Position: &msg.Point{X: int32(food.Position.X), Y: int32(food.Position.Y)},
+		Score:    int32(food.ScoreValue),
+	}
+}
+
+// buildPlayerRanks 根据玩家分数构建排名列表（按分数降序排列）。
+// 调用方必须持有 r.mu 锁。
+func buildPlayerRanks(players []*PlayerInfo, snakes map[uint64]*Snake) []*msg.PlayerRank {
+	type playerScore struct {
+		playerID uint64
+		nickname string
+		score    int
+	}
+
+	scores := make([]playerScore, 0, len(players))
+	for _, p := range players {
+		score := 0
+		if snake, ok := snakes[p.PlayerID]; ok {
+			score = snake.Score
+		}
+		scores = append(scores, playerScore{
+			playerID: p.PlayerID,
+			nickname: p.Nickname,
+			score:    score,
+		})
+	}
+
+	// 按分数降序排列
+	sort.Slice(scores, func(i, j int) bool {
+		return scores[i].score > scores[j].score
+	})
+
+	ranks := make([]*msg.PlayerRank, 0, len(scores))
+	for i, ps := range scores {
+		ranks = append(ranks, &msg.PlayerRank{
+			PlayerId: ps.playerID,
+			Nickname: ps.nickname,
+			Score:    int32(ps.score),
+			Rank:     int32(i + 1),
+		})
+	}
+	return ranks
 }

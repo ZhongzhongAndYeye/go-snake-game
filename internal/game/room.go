@@ -4,6 +4,7 @@ package game
 
 import (
 	"errors"
+	"go-snake-game/pkg/logger"
 	"sync"
 	"time"
 )
@@ -43,6 +44,7 @@ type Room struct {
 	Players    []*PlayerInfo // 房间内玩家列表
 	CreateTime time.Time     // 房间创建时间
 	StartTime  time.Time     // 游戏开始时间（零值表示未开始）
+	EndTime    time.Time     // 游戏结束时间（零值表示未结束），用于定时清理判断
 
 	// 游戏状态（仅在 Status == Playing 时有效）
 	GameStatus  int               // 游戏阶段：1 未开始，2 进行中，3 暂停，4 已结束
@@ -148,4 +150,31 @@ func (r *Room) setRoomEndedLocked() error {
 
 	r.Status = RoomStatusEnded
 	return nil
+}
+
+// Cleanup 释放房间所有资源，确保游戏循环 goroutine 正常退出。
+// 调用方无需持有锁，方法内部会自行加锁。
+// 调用后房间不应再被使用。
+func (r *Room) Cleanup() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	// 停止帧定时器
+	if r.ticker != nil {
+		r.ticker.Stop()
+		r.ticker = nil
+	}
+
+	// 关闭停止通道，确保游戏主循环 goroutine 退出
+	select {
+	case <-r.stopCh:
+		// 通道已关闭，无需重复关闭
+	default:
+		close(r.stopCh)
+	}
+
+	// 释放引用，帮助 GC 回收
+	r.Snakes = nil
+	r.CurrentFood = nil
+	logger.Info("房间资源清理完成", "room_id", r.RoomID)
 }

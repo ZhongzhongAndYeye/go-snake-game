@@ -318,6 +318,59 @@ func (x *GameOperationReq) GetDirection() int32 {
 	return 0
 }
 
+// 方向操作响应（游戏服 → 客户端）
+type GameOperationResp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          int32                  `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"` // 业务状态码，0 成功，非 0 失败
+	Msg           string                 `protobuf:"bytes,2,opt,name=msg,proto3" json:"msg,omitempty"`    // 提示信息
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GameOperationResp) Reset() {
+	*x = GameOperationResp{}
+	mi := &file_pkg_proto_msg_game_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GameOperationResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GameOperationResp) ProtoMessage() {}
+
+func (x *GameOperationResp) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_msg_game_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GameOperationResp.ProtoReflect.Descriptor instead.
+func (*GameOperationResp) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_msg_game_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *GameOperationResp) GetCode() int32 {
+	if x != nil {
+		return x.Code
+	}
+	return 0
+}
+
+func (x *GameOperationResp) GetMsg() string {
+	if x != nil {
+		return x.Msg
+	}
+	return ""
+}
+
 // 房间信息查询请求（客户端 → 游戏服）
 type RoomInfoQueryReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -328,7 +381,7 @@ type RoomInfoQueryReq struct {
 
 func (x *RoomInfoQueryReq) Reset() {
 	*x = RoomInfoQueryReq{}
-	mi := &file_pkg_proto_msg_game_proto_msgTypes[5]
+	mi := &file_pkg_proto_msg_game_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -340,7 +393,7 @@ func (x *RoomInfoQueryReq) String() string {
 func (*RoomInfoQueryReq) ProtoMessage() {}
 
 func (x *RoomInfoQueryReq) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_msg_game_proto_msgTypes[5]
+	mi := &file_pkg_proto_msg_game_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -353,7 +406,7 @@ func (x *RoomInfoQueryReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RoomInfoQueryReq.ProtoReflect.Descriptor instead.
 func (*RoomInfoQueryReq) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_msg_game_proto_rawDescGZIP(), []int{5}
+	return file_pkg_proto_msg_game_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *RoomInfoQueryReq) GetRoomId() string {
@@ -377,7 +430,7 @@ type GameStartNotify struct {
 
 func (x *GameStartNotify) Reset() {
 	*x = GameStartNotify{}
-	mi := &file_pkg_proto_msg_game_proto_msgTypes[6]
+	mi := &file_pkg_proto_msg_game_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -389,7 +442,7 @@ func (x *GameStartNotify) String() string {
 func (*GameStartNotify) ProtoMessage() {}
 
 func (x *GameStartNotify) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_msg_game_proto_msgTypes[6]
+	mi := &file_pkg_proto_msg_game_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -402,7 +455,7 @@ func (x *GameStartNotify) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GameStartNotify.ProtoReflect.Descriptor instead.
 func (*GameStartNotify) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_msg_game_proto_rawDescGZIP(), []int{6}
+	return file_pkg_proto_msg_game_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GameStartNotify) GetMapWidth() int32 {
@@ -446,7 +499,7 @@ type GameStateSync struct {
 
 func (x *GameStateSync) Reset() {
 	*x = GameStateSync{}
-	mi := &file_pkg_proto_msg_game_proto_msgTypes[7]
+	mi := &file_pkg_proto_msg_game_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -458,7 +511,7 @@ func (x *GameStateSync) String() string {
 func (*GameStateSync) ProtoMessage() {}
 
 func (x *GameStateSync) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_msg_game_proto_msgTypes[7]
+	mi := &file_pkg_proto_msg_game_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -471,7 +524,7 @@ func (x *GameStateSync) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GameStateSync.ProtoReflect.Descriptor instead.
 func (*GameStateSync) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_msg_game_proto_rawDescGZIP(), []int{7}
+	return file_pkg_proto_msg_game_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *GameStateSync) GetFrame() int64 {
@@ -506,7 +559,7 @@ type GameOverNotify struct {
 
 func (x *GameOverNotify) Reset() {
 	*x = GameOverNotify{}
-	mi := &file_pkg_proto_msg_game_proto_msgTypes[8]
+	mi := &file_pkg_proto_msg_game_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -518,7 +571,7 @@ func (x *GameOverNotify) String() string {
 func (*GameOverNotify) ProtoMessage() {}
 
 func (x *GameOverNotify) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_msg_game_proto_msgTypes[8]
+	mi := &file_pkg_proto_msg_game_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -531,7 +584,7 @@ func (x *GameOverNotify) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GameOverNotify.ProtoReflect.Descriptor instead.
 func (*GameOverNotify) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_msg_game_proto_rawDescGZIP(), []int{8}
+	return file_pkg_proto_msg_game_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *GameOverNotify) GetRanks() []*PlayerRank {
@@ -568,7 +621,10 @@ const file_pkg_proto_msg_game_proto_rawDesc = "" +
 	"\x05score\x18\x03 \x01(\x05R\x05score\x12\x12\n" +
 	"\x04rank\x18\x04 \x01(\x05R\x04rank\"0\n" +
 	"\x10GameOperationReq\x12\x1c\n" +
-	"\tdirection\x18\x01 \x01(\x05R\tdirection\"+\n" +
+	"\tdirection\x18\x01 \x01(\x05R\tdirection\"9\n" +
+	"\x11GameOperationResp\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x10\n" +
+	"\x03msg\x18\x02 \x01(\tR\x03msg\"+\n" +
 	"\x10RoomInfoQueryReq\x12\x17\n" +
 	"\aroom_id\x18\x01 \x01(\tR\x06roomId\"\x9a\x01\n" +
 	"\x0fGameStartNotify\x12\x1b\n" +
@@ -596,17 +652,18 @@ func file_pkg_proto_msg_game_proto_rawDescGZIP() []byte {
 	return file_pkg_proto_msg_game_proto_rawDescData
 }
 
-var file_pkg_proto_msg_game_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_pkg_proto_msg_game_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_pkg_proto_msg_game_proto_goTypes = []any{
-	(*Point)(nil),            // 0: msg.Point
-	(*SnakeState)(nil),       // 1: msg.SnakeState
-	(*FoodState)(nil),        // 2: msg.FoodState
-	(*PlayerRank)(nil),       // 3: msg.PlayerRank
-	(*GameOperationReq)(nil), // 4: msg.GameOperationReq
-	(*RoomInfoQueryReq)(nil), // 5: msg.RoomInfoQueryReq
-	(*GameStartNotify)(nil),  // 6: msg.GameStartNotify
-	(*GameStateSync)(nil),    // 7: msg.GameStateSync
-	(*GameOverNotify)(nil),   // 8: msg.GameOverNotify
+	(*Point)(nil),             // 0: msg.Point
+	(*SnakeState)(nil),        // 1: msg.SnakeState
+	(*FoodState)(nil),         // 2: msg.FoodState
+	(*PlayerRank)(nil),        // 3: msg.PlayerRank
+	(*GameOperationReq)(nil),  // 4: msg.GameOperationReq
+	(*GameOperationResp)(nil), // 5: msg.GameOperationResp
+	(*RoomInfoQueryReq)(nil),  // 6: msg.RoomInfoQueryReq
+	(*GameStartNotify)(nil),   // 7: msg.GameStartNotify
+	(*GameStateSync)(nil),     // 8: msg.GameStateSync
+	(*GameOverNotify)(nil),    // 9: msg.GameOverNotify
 }
 var file_pkg_proto_msg_game_proto_depIdxs = []int32{
 	0, // 0: msg.SnakeState.body:type_name -> msg.Point
@@ -634,7 +691,7 @@ func file_pkg_proto_msg_game_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_pkg_proto_msg_game_proto_rawDesc), len(file_pkg_proto_msg_game_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

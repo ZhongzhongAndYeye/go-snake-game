@@ -48,6 +48,14 @@ func GameOperationHandler(s *Session, packet *network.Packet) {
 	}
 
 	logger.Info("游戏操作成功", "session_id", s.logID(), "player_id", playerID, "code", resp.Code, "msg", resp.Msg)
+
+	// 发送响应给客户端
+	respBody, _ := proto.Marshal(&msg.GameOperationResp{Code: int32(resp.Code), Msg: resp.Msg})
+	s.Send(&network.Packet{
+		MsgID: network.MsgIDGameOperationReq,
+		SeqID: packet.SeqID,
+		Body:  respBody,
+	})
 }
 
 // RoomInfoQueryHandler 房间信息查询请求处理器。

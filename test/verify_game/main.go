@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -25,6 +26,99 @@ var (
 	failCount = 0
 )
 
+// 推送消息ID集合
+var pushMsgIDs = map[uint16]bool{
+	network.MsgIDGameStartNotify: true,
+	network.MsgIDGameStateSync:   true,
+	network.MsgIDGameOverNotify:  true,
+}
+
+// Client 封装一个 WebSocket 连接，后台 goroutine 持续读取消息，
+// 通过 channel 分发给等待响应的调用方。
+type Client struct {
+	conn      *websocket.Conn
+	msgCh     chan *network.Packet // 所有非推送消息投递到此 channel
+	stopCh    chan struct{}
+	closeOnce sync.Once
+}
+
+func NewClient() (*Client, error) {
+	dialer := websocket.DefaultDialer
+	dialer.HandshakeTimeout = 5 * time.Second
+	conn, _, err := dialer.Dial(serverAddr, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	c := &Client{
+		conn:   conn,
+		msgCh:  make(chan *network.Packet, 64),
+		stopCh: make(chan struct{}),
+	}
+
+	// 后台 goroutine 持续读取所有消息，推送消息直接丢弃，非推送消息投递到 msgCh
+	go func() {
+		for {
+			_, data, err := conn.ReadMessage()
+			if err != nil {
+				close(c.msgCh)
+				return
+			}
+
+			packet := decodePacket(data)
+			if packet == nil {
+				continue
+			}
+
+			// 推送消息直接丢弃
+			if pushMsgIDs[packet.MsgID] {
+				continue
+			}
+
+			// 非推送消息投递到 channel
+			select {
+			case c.msgCh <- packet:
+			default:
+				// channel 满了丢弃（正常情况下不会发生）
+			}
+		}
+	}()
+
+	return c, nil
+}
+
+func (c *Client) Close() {
+	c.closeOnce.Do(func() {
+		close(c.stopCh)
+		c.conn.Close()
+	})
+}
+
+// SendAndReceive 发送消息并等待响应。
+// 超时 10 秒仍未收到响应则返回 nil。
+func (c *Client) SendAndReceive(msgID uint16, seqID uint16, body []byte) *network.Packet {
+	data, err := network.Encode(msgID, seqID, body)
+	if err != nil {
+		fmt.Printf("❌ 编码失败: %v\n", err)
+		return nil
+	}
+	if err = c.conn.WriteMessage(websocket.BinaryMessage, data); err != nil {
+		fmt.Printf("❌ 发送失败: %v\n", err)
+		return nil
+	}
+
+	// 等待响应（最多 10 秒）
+	select {
+	case packet := <-c.msgCh:
+		return packet
+	case <-time.After(10 * time.Second):
+		fmt.Printf("❌ 等待响应超时, MsgID=%d\n", msgID)
+		return nil
+	case <-c.stopCh:
+		return nil
+	}
+}
+
 func main() {
 	fmt.Println("========================================")
 	fmt.Println("  游戏运行状态验证")
@@ -36,18 +130,18 @@ func main() {
 
 	// 连接玩家1
 	fmt.Println("\n=== 连接玩家1 ===")
-	conn1, err := dial()
+	cl1, err := NewClient()
 	if err != nil {
 		fmt.Printf("❌ 连接失败: %v\n", err)
 		return
 	}
-	defer conn1.Close()
+	defer cl1.Close()
 
 	seqID := uint16(0)
 	seqID++
-	testRegister(conn1, seqID, user1, password)
+	testRegister(cl1, seqID, user1, password)
 	seqID++
-	playerID1 := testLogin(conn1, seqID, user1, password)
+	playerID1 := testLogin(cl1, seqID, user1, password)
 	if playerID1 == 0 {
 		fmt.Println("❌ 玩家1登录失败，终止测试")
 		return
@@ -55,18 +149,18 @@ func main() {
 
 	// 连接玩家2
 	fmt.Println("\n=== 连接玩家2 ===")
-	conn2, err := dial()
+	cl2, err := NewClient()
 	if err != nil {
 		fmt.Printf("❌ 连接失败: %v\n", err)
 		return
 	}
-	defer conn2.Close()
+	defer cl2.Close()
 
 	seqID = 0
 	seqID++
-	testRegister(conn2, seqID, user2, password)
+	testRegister(cl2, seqID, user2, password)
 	seqID++
-	playerID2 := testLogin(conn2, seqID, user2, password)
+	playerID2 := testLogin(cl2, seqID, user2, password)
 	if playerID2 == 0 {
 		fmt.Println("❌ 玩家2登录失败，终止测试")
 		return
@@ -77,19 +171,17 @@ func main() {
 	fmt.Println("  第一阶段：匹配验证")
 	fmt.Println("========================================")
 
-	// 玩家1发起匹配
 	var roomID string
 	seqID = 0
 	seqID++
-	roomID1 := testMatchStart(conn1, seqID, "玩家1", true)
+	roomID1 := testMatchStart(cl1, seqID, "玩家1", true)
 	if roomID1 != "" {
 		roomID = roomID1
 	}
 
-	// 玩家2发起匹配
 	seqID = 0
 	seqID++
-	roomID2 := testMatchStart(conn2, seqID, "玩家2", false)
+	roomID2 := testMatchStart(cl2, seqID, "玩家2", false)
 	if roomID2 != "" {
 		roomID = roomID2
 	}
@@ -100,28 +192,28 @@ func main() {
 	}
 	fmt.Printf("\n✅ 匹配成功，房间ID: %s\n", roomID)
 
+	// 等待游戏启动
+	time.Sleep(200 * time.Millisecond)
+
 	// ======== 第二阶段：验证主循环和方向操作 ========
 	fmt.Println("\n========================================")
 	fmt.Println("  第二阶段：主循环 + 方向操作验证")
 	fmt.Println("========================================")
 
-	// 立即查询初始状态
-	time.Sleep(200 * time.Millisecond) // 等待游戏启动
 	seqID = 0
 	seqID++
-	queryRoomInfo(conn1, seqID, roomID)
+	queryRoomInfo(cl1, seqID, roomID)
 
-	// 立即发送方向操作（蛇1：向下转，蛇2：向上转）
-	// 蛇1从(5,5)朝右 → 改为朝下
+	// 发送方向操作（蛇1：向下转）
 	seqID++
 	fmt.Println("\n--- 蛇1发送方向操作：下 ---")
-	sendDirection(conn1, seqID, 2) // DirDown
+	sendDirection(cl1, seqID, 2)
 
-	// 蛇2从(14,14)朝左 → 改为朝上
+	// 蛇2发送方向操作（向上转）
 	seqID = 0
 	seqID++
 	fmt.Println("\n--- 蛇2发送方向操作：上 ---")
-	sendDirection(conn2, seqID, 1) // DirUp
+	sendDirection(cl2, seqID, 1)
 
 	// 等待几帧，让蛇移动
 	time.Sleep(800 * time.Millisecond)
@@ -130,20 +222,21 @@ func main() {
 	seqID = 0
 	seqID++
 	fmt.Println("\n--- 方向操作后查询状态 ---")
-	queryRoomInfo(conn1, seqID, roomID)
+	queryRoomInfo(cl1, seqID, roomID)
 
 	// ======== 第三阶段：等待游戏结束，验证碰撞和得分 ========
 	fmt.Println("\n========================================")
 	fmt.Println("  第三阶段：等待游戏结束（蛇会撞墙/撞自己）")
 	fmt.Println("========================================")
 
-	// 蛇1转向下后，会从(5,5)向下走，最终撞底墙(y=20)
-	// 蛇2转向上后，会从(14,14)向上走，最终撞顶墙(y=-1)
-	// 游戏会在约1.5-2秒后结束
 	for i := 0; i < 5; i++ {
 		time.Sleep(1 * time.Second)
 		seqID++
-		queryRoomInfo(conn1, seqID, roomID)
+		roomInfo := queryRoomInfo(cl1, seqID, roomID)
+		if roomInfo != nil && roomInfo.GameStatus == 4 {
+			fmt.Println("   ✅ 游戏已结束")
+			break
+		}
 	}
 
 	// ======== 第四阶段：验证数据库 ========
@@ -164,36 +257,11 @@ func main() {
 	}
 }
 
-func dial() (*websocket.Conn, error) {
-	dialer := websocket.DefaultDialer
-	dialer.HandshakeTimeout = 5 * time.Second
-	conn, _, err := dialer.Dial(serverAddr, nil)
-	return conn, err
-}
-
-func sendAndReceive(conn *websocket.Conn, msgID uint16, seqID uint16, body []byte) *network.Packet {
-	data, err := network.Encode(msgID, seqID, body)
-	if err != nil {
-		fmt.Printf("❌ 编码失败: %v\n", err)
-		return nil
-	}
-	if err = conn.WriteMessage(websocket.BinaryMessage, data); err != nil {
-		fmt.Printf("❌ 发送失败: %v\n", err)
-		return nil
-	}
-	_, respData, err := conn.ReadMessage()
-	if err != nil {
-		fmt.Printf("❌ 接收响应失败: %v\n", err)
-		return nil
-	}
-	return decodePacket(respData)
-}
-
-func testRegister(conn *websocket.Conn, seqID uint16, user, pwd string) {
+func testRegister(cl *Client, seqID uint16, user, pwd string) {
 	fmt.Printf("📝 注册: username=%s\n", user)
 	req := &msg.RegisterReq{Username: user, Password: pwd}
 	body, _ := proto.Marshal(req)
-	packet := sendAndReceive(conn, network.MsgIDRegisterReq, seqID, body)
+	packet := cl.SendAndReceive(network.MsgIDRegisterReq, seqID, body)
 	if packet == nil {
 		failCount++
 		return
@@ -210,11 +278,11 @@ func testRegister(conn *websocket.Conn, seqID uint16, user, pwd string) {
 	}
 }
 
-func testLogin(conn *websocket.Conn, seqID uint16, user, pwd string) uint64 {
+func testLogin(cl *Client, seqID uint16, user, pwd string) uint64 {
 	fmt.Printf("📝 登录: username=%s\n", user)
 	req := &msg.LoginReq{Username: user, Password: pwd}
 	body, _ := proto.Marshal(req)
-	packet := sendAndReceive(conn, network.MsgIDLoginReq, seqID, body)
+	packet := cl.SendAndReceive(network.MsgIDLoginReq, seqID, body)
 	if packet == nil {
 		failCount++
 		return 0
@@ -239,10 +307,10 @@ func testLogin(conn *websocket.Conn, seqID uint16, user, pwd string) uint64 {
 	return 0
 }
 
-func testMatchStart(conn *websocket.Conn, seqID uint16, name string, expectWaiting bool) string {
+func testMatchStart(cl *Client, seqID uint16, name string, expectWaiting bool) string {
 	fmt.Printf("📝 [%s] 发起匹配\n", name)
 	_ = expectWaiting
-	packet := sendAndReceive(conn, network.MsgIDMatchStartReq, seqID, nil)
+	packet := cl.SendAndReceive(network.MsgIDMatchStartReq, seqID, nil)
 	if packet == nil {
 		failCount++
 		return ""
@@ -274,10 +342,10 @@ func testMatchStart(conn *websocket.Conn, seqID uint16, name string, expectWaiti
 	return ""
 }
 
-func sendDirection(conn *websocket.Conn, seqID uint16, direction int32) {
+func sendDirection(cl *Client, seqID uint16, direction int32) {
 	req := &msg.GameOperationReq{Direction: direction}
 	body, _ := proto.Marshal(req)
-	packet := sendAndReceive(conn, network.MsgIDGameOperationReq, seqID, body)
+	packet := cl.SendAndReceive(network.MsgIDGameOperationReq, seqID, body)
 	if packet == nil {
 		failCount++
 		return
@@ -286,13 +354,13 @@ func sendDirection(conn *websocket.Conn, seqID uint16, direction int32) {
 	passCount++
 }
 
-func queryRoomInfo(conn *websocket.Conn, seqID uint16, roomID string) {
+func queryRoomInfo(cl *Client, seqID uint16, roomID string) *rpcpb.GetRoomInfoResponse {
 	req := &msg.RoomInfoQueryReq{RoomId: roomID}
 	body, _ := proto.Marshal(req)
-	packet := sendAndReceive(conn, network.MsgIDGameRoomInfoReq, seqID, body)
+	packet := cl.SendAndReceive(network.MsgIDGameRoomInfoReq, seqID, body)
 	if packet == nil {
 		failCount++
-		return
+		return nil
 	}
 
 	if packet.MsgID == network.MsgIDGameRoomInfoResp {
@@ -300,7 +368,7 @@ func queryRoomInfo(conn *websocket.Conn, seqID uint16, roomID string) {
 		if err := proto.Unmarshal(packet.Body, resp); err != nil {
 			fmt.Printf("   ❌ 反序列化失败: %v\n\n", err)
 			failCount++
-			return
+			return nil
 		}
 
 		statusStr := map[int32]string{1: "等待中", 2: "游戏中", 3: "已结束"}
@@ -338,9 +406,11 @@ func queryRoomInfo(conn *websocket.Conn, seqID uint16, roomID string) {
 				s.PlayerId, s.Nickname, aliveStr, s.Score, headStr, len(s.Body))
 		}
 		passCount++
+		return resp
 	} else {
 		fmt.Printf("   ❌ 未知消息ID: %d\n", packet.MsgID)
 		failCount++
+		return nil
 	}
 }
 

@@ -26,6 +26,7 @@ const (
 	GameService_CancelMatch_FullMethodName     = "/rpc.GameService/CancelMatch"
 	GameService_GetRoomInfo_FullMethodName     = "/rpc.GameService/GetRoomInfo"
 	GameService_PlayerOperation_FullMethodName = "/rpc.GameService/PlayerOperation"
+	GameService_PlayerOffline_FullMethodName   = "/rpc.GameService/PlayerOffline"
 )
 
 // GameServiceClient is the client API for GameService service.
@@ -42,6 +43,12 @@ type GameServiceClient interface {
 	GetRoomInfo(ctx context.Context, in *GetRoomInfoRequest, opts ...grpc.CallOption) (*GetRoomInfoResponse, error)
 	// PlayerOperation 玩家游戏操作（如方向变更）
 	PlayerOperation(ctx context.Context, in *PlayerOperationRequest, opts ...grpc.CallOption) (*PlayerOperationResponse, error)
+	// PlayerOffline 玩家离线通知（网关回调）
+	// 玩家 WebSocket 断开连接时，网关调用此接口通知游戏服。
+	// 游戏服根据玩家当前状态做相应处理：
+	//   - 游戏中：标记蛇死亡，触发游戏结束判定
+	//   - 匹配中：从匹配队列移除
+	PlayerOffline(ctx context.Context, in *PlayerOfflineRequest, opts ...grpc.CallOption) (*PlayerOfflineResponse, error)
 }
 
 type gameServiceClient struct {
@@ -92,6 +99,16 @@ func (c *gameServiceClient) PlayerOperation(ctx context.Context, in *PlayerOpera
 	return out, nil
 }
 
+func (c *gameServiceClient) PlayerOffline(ctx context.Context, in *PlayerOfflineRequest, opts ...grpc.CallOption) (*PlayerOfflineResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PlayerOfflineResponse)
+	err := c.cc.Invoke(ctx, GameService_PlayerOffline_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GameServiceServer is the server API for GameService service.
 // All implementations must embed UnimplementedGameServiceServer
 // for forward compatibility.
@@ -106,6 +123,12 @@ type GameServiceServer interface {
 	GetRoomInfo(context.Context, *GetRoomInfoRequest) (*GetRoomInfoResponse, error)
 	// PlayerOperation 玩家游戏操作（如方向变更）
 	PlayerOperation(context.Context, *PlayerOperationRequest) (*PlayerOperationResponse, error)
+	// PlayerOffline 玩家离线通知（网关回调）
+	// 玩家 WebSocket 断开连接时，网关调用此接口通知游戏服。
+	// 游戏服根据玩家当前状态做相应处理：
+	//   - 游戏中：标记蛇死亡，触发游戏结束判定
+	//   - 匹配中：从匹配队列移除
+	PlayerOffline(context.Context, *PlayerOfflineRequest) (*PlayerOfflineResponse, error)
 	mustEmbedUnimplementedGameServiceServer()
 }
 
@@ -127,6 +150,9 @@ func (UnimplementedGameServiceServer) GetRoomInfo(context.Context, *GetRoomInfoR
 }
 func (UnimplementedGameServiceServer) PlayerOperation(context.Context, *PlayerOperationRequest) (*PlayerOperationResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method PlayerOperation not implemented")
+}
+func (UnimplementedGameServiceServer) PlayerOffline(context.Context, *PlayerOfflineRequest) (*PlayerOfflineResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method PlayerOffline not implemented")
 }
 func (UnimplementedGameServiceServer) mustEmbedUnimplementedGameServiceServer() {}
 func (UnimplementedGameServiceServer) testEmbeddedByValue()                     {}
@@ -221,6 +247,24 @@ func _GameService_PlayerOperation_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GameService_PlayerOffline_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PlayerOfflineRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GameServiceServer).PlayerOffline(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GameService_PlayerOffline_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GameServiceServer).PlayerOffline(ctx, req.(*PlayerOfflineRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GameService_ServiceDesc is the grpc.ServiceDesc for GameService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -243,6 +287,10 @@ var GameService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PlayerOperation",
 			Handler:    _GameService_PlayerOperation_Handler,
+		},
+		{
+			MethodName: "PlayerOffline",
+			Handler:    _GameService_PlayerOffline_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

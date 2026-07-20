@@ -16,6 +16,12 @@ service GameService {
   rpc GetRoomInfo(GetRoomInfoRequest) returns (GetRoomInfoResponse);
   // PlayerOperation 玩家游戏操作（如方向变更）
   rpc PlayerOperation(PlayerOperationRequest) returns (PlayerOperationResponse);
+  // PlayerOffline 玩家离线通知（网关回调）
+  // 玩家 WebSocket 断开连接时，网关调用此接口通知游戏服。
+  // 游戏服根据玩家当前状态做相应处理：
+  //   - 游戏中：标记蛇死亡，触发游戏结束判定
+  //   - 匹配中：从匹配队列移除
+  rpc PlayerOffline(PlayerOfflineRequest) returns (PlayerOfflineResponse);
 }
 
 // Point 网格坐标点
@@ -98,6 +104,18 @@ message PlayerOperationRequest {
 
 // PlayerOperationResponse 玩家游戏操作响应
 message PlayerOperationResponse {
+  int32  code = 1; // 业务状态码，0 成功，非 0 失败
+  string msg  = 2; // 提示信息
+}
+
+// PlayerOfflineRequest 玩家离线通知请求
+message PlayerOfflineRequest {
+  uint64 player_id = 1; // 离线玩家 ID
+  string room_id   = 2; // 房间 ID，网关已知时传入；为空时游戏服自行查找
+}
+
+// PlayerOfflineResponse 玩家离线通知响应
+message PlayerOfflineResponse {
   int32  code = 1; // 业务状态码，0 成功，非 0 失败
   string msg  = 2; // 提示信息
 }

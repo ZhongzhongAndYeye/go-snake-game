@@ -49,12 +49,16 @@ func main() {
 		PoolTimeout:  config.GlobalCfg.Redis.PoolTimeout,
 	})
 
-	// 5. 创建 gRPC 服务并注册 GameService
+	// 5. 初始化网关 gRPC 客户端（用于推送消息）
+	gatewayRpcAddr := config.GlobalCfg.Game.GatewayRpcAddr
+	game.InitGatewayRpcClient(gatewayRpcAddr)
+
+	// 6. 创建 gRPC 服务并注册 GameService
 	grpcServer := grpc.NewServer()
 	gameServer := game.NewGameServer()
 	pb.RegisterGameServiceServer(grpcServer, gameServer)
 
-	// 6. 监听配置中的 gRPC 地址
+	// 7. 监听配置中的 gRPC 地址
 	grpcAddr := config.GlobalCfg.Game.GrpcAddr
 	lis, err := net.Listen("tcp", grpcAddr)
 	if err != nil {

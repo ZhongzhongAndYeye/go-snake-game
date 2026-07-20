@@ -44,6 +44,12 @@ message GameOperationReq {
   int32 direction = 1; // 方向：1 上，2 下，3 左，4 右
 }
 
+// 方向操作响应（游戏服 → 客户端）
+message GameOperationResp {
+  int32  code = 1; // 业务状态码，0 成功，非 0 失败
+  string msg  = 2; // 提示信息
+}
+
 // 房间信息查询请求（客户端 → 游戏服）
 message RoomInfoQueryReq {
   string room_id = 1; // 房间 ID，为空时查询自己所在房间

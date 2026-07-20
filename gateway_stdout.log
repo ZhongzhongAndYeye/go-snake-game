@@ -1,0 +1,16 @@
+2026-07-21T01:26:36.543+0800	[34mINFO[0m	gateway/main.go:32	初始化登录服 gRPC 连接	{"addr": "127.0.0.1:9001"}
+2026-07-21T01:26:36.547+0800	[34mINFO[0m	gateway/rpc_client.go:38	初始化登录服 gRPC 客户端	{"addr": "127.0.0.1:9001"}
+2026-07-21T01:26:36.547+0800	[34mINFO[0m	gateway/rpc_client.go:62	登录服 gRPC 客户端初始化成功	{"addr": "127.0.0.1:9001"}
+2026-07-21T01:26:36.547+0800	[34mINFO[0m	gateway/main.go:37	初始化游戏服 gRPC 连接	{"addr": "127.0.0.1:9002"}
+2026-07-21T01:26:36.547+0800	[34mINFO[0m	gateway/rpc_game_client.go:26	初始化游戏服 gRPC 客户端	{"addr": "127.0.0.1:9002"}
+2026-07-21T01:26:36.548+0800	[34mINFO[0m	gateway/rpc_game_client.go:49	游戏服 gRPC 客户端初始化成功	{"addr": "127.0.0.1:9002"}
+2026-07-21T01:26:36.548+0800	[34mINFO[0m	gateway/main.go:42	网关 WebSocket 服务启动	{"listen_addr": "0.0.0.0:8080"}
+2026-07-21T01:26:36.548+0800	[34mINFO[0m	gateway/router.go:63	注册免鉴权消息路由	{"msg_id": 1001}
+2026-07-21T01:26:36.548+0800	[34mINFO[0m	gateway/router.go:63	注册免鉴权消息路由	{"msg_id": 1006}
+2026-07-21T01:26:36.548+0800	[34mINFO[0m	gateway/router.go:63	注册免鉴权消息路由	{"msg_id": 1003}
+2026-07-21T01:26:36.548+0800	[34mINFO[0m	gateway/router.go:53	注册消息路由	{"msg_id": 2001}
+2026-07-21T01:26:36.548+0800	[34mINFO[0m	gateway/router.go:53	注册消息路由	{"msg_id": 2003}
+2026-07-21T01:26:36.548+0800	[34mINFO[0m	gateway/router.go:53	注册消息路由	{"msg_id": 3001}
+2026-07-21T01:26:36.548+0800	[34mINFO[0m	gateway/router.go:53	注册消息路由	{"msg_id": 2006}
+2026-07-21T01:26:36.548+0800	[34mINFO[0m	gateway/main.go:48	网关 gRPC 推送服务启动	{"grpc_addr": "0.0.0.0:9000"}
+2026-07-21T01:26:36.550+0800	[34mINFO[0m	gateway/server.go:105	网关服务器启动	{"listen_addr": "0.0.0.0:8080"}

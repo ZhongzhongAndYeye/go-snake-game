@@ -235,3 +235,88 @@ func (s *GameServerImpl) PlayerOperation(ctx context.Context, req *pb.PlayerOper
 	logger.Info("gRPC PlayerOperation 成功", "player_id", playerID, "room_id", roomID, "direction", direction)
 	return &pb.PlayerOperationResponse{Code: CodeSuccess, Msg: "操作成功"}, nil
 }
+
+// PlayerOffline 玩家离线通知。
+// 网关在玩家 WebSocket 断开连接时调用此接口。
+// 游戏服根据玩家当前状态处理：
+//   - 游戏中：标记该玩家蛇死亡，触发游戏结束判定
+//   - 匹配中：从匹配队列移除
+func (s *GameServerImpl) PlayerOffline(ctx context.Context, req *pb.PlayerOfflineRequest) (*pb.PlayerOfflineResponse, error) {
+	playerID := req.GetPlayerId()
+	roomID := req.GetRoomId()
+
+	logger.Info("gRPC PlayerOffline", "player_id", playerID, "room_id", roomID)
+
+	// 参数校验
+	if playerID == 0 {
+		logger.Warn("gRPC PlayerOffline 参数无效", "player_id", playerID)
+		return &pb.PlayerOfflineResponse{Code: CodeInvalidParam, Msg: "玩家 ID 不能为空"}, nil
+	}
+
+	// 如果 roomID 为空，通过玩家 ID 查找房间
+	if roomID == "" {
+		var ok bool
+		roomID, ok = s.roomManager.GetPlayerRoom(playerID)
+		if !ok {
+			// 玩家不在任何房间，可能正在匹配队列中，尝试从匹配队列移除
+			logger.Info("gRPC PlayerOffline 玩家不在房间，尝试从匹配队列移除", "player_id", playerID)
+			if err := s.matchManager.RemoveFromMatchQueue(playerID); err != nil {
+				if errors.Is(err, ErrPlayerNotInQueue) {
+					logger.Info("gRPC PlayerOffline 玩家既不在房间也不在匹配队列", "player_id", playerID)
+					return &pb.PlayerOfflineResponse{Code: CodeSuccess, Msg: "玩家不在任何房间或队列中"}, nil
+				}
+				logger.Warn("gRPC PlayerOffline 从匹配队列移除失败", "player_id", playerID, "error", err)
+				return &pb.PlayerOfflineResponse{Code: CodeOperationFail, Msg: "从匹配队列移除失败"}, nil
+			}
+			logger.Info("gRPC PlayerOffline 已从匹配队列移除", "player_id", playerID)
+			return &pb.PlayerOfflineResponse{Code: CodeSuccess, Msg: "已从匹配队列移除"}, nil
+		}
+	}
+
+	// 查找房间
+	room, ok := s.roomManager.GetRoom(roomID)
+	if !ok {
+		logger.Warn("gRPC PlayerOffline 房间不存在", "room_id", roomID)
+		return &pb.PlayerOfflineResponse{Code: CodeRoomNotFound, Msg: "房间不存在"}, nil
+	}
+
+	// 处理房间内的离线逻辑
+	room.mu.Lock()
+
+	// 标记玩家离线
+	for _, p := range room.Players {
+		if p.PlayerID == playerID {
+			p.IsOnline = false
+			break
+		}
+	}
+
+	// 如果游戏正在进行，标记蛇死亡并触发结束判定
+	if room.GameStatus == GameStatusPlaying {
+		if snake, ok := room.Snakes[playerID]; ok && snake.IsAlive {
+			snake.Die()
+			logger.Info("玩家离线，标记蛇死亡", "player_id", playerID, "room_id", roomID)
+
+			// 检查是否所有存活蛇都已死亡（只剩离线玩家死亡或全部死亡）
+			aliveCount := 0
+			for _, s := range room.Snakes {
+				if s.IsAlive {
+					aliveCount++
+				}
+			}
+			if aliveCount <= 1 {
+				logger.Info("玩家离线触发游戏结束判定", "room_id", roomID, "alive_count", aliveCount)
+				room.mu.Unlock()
+				// 异步结束游戏，避免死锁
+				room.EndGame()
+				logger.Info("gRPC PlayerOffline 成功，已触发游戏结束", "player_id", playerID, "room_id", roomID)
+				return &pb.PlayerOfflineResponse{Code: CodeSuccess, Msg: "玩家离线，游戏已结束"}, nil
+			}
+		}
+	}
+
+	room.mu.Unlock()
+
+	logger.Info("gRPC PlayerOffline 成功", "player_id", playerID, "room_id", roomID)
+	return &pb.PlayerOfflineResponse{Code: CodeSuccess, Msg: "玩家离线处理成功"}, nil
+}

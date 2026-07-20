@@ -4,9 +4,10 @@ log:
   console: true          # 输出到控制台
   file: ""               # 日志文件路径，为空表示不输出到文件
 
-# 网关服务 — WebSocket 接入层
+# 网关服务 — WebSocket 接入层 + gRPC 推送服务
 gateway:
   listen_addr: "0.0.0.0:8080"   # WebSocket 监听地址
+  grpc_addr: "0.0.0.0:9000"     # gRPC 推送服务监听地址
   login_rpc_addr: "127.0.0.1:9001"  # 登录服 gRPC 地址
   game_rpc_addr: "127.0.0.1:9002"   # 游戏服 gRPC 地址
   heartbeat_timeout: 60          # 心跳超时（秒），超时断开连接
@@ -17,7 +18,8 @@ login:
 
 # 游戏逻辑服
 game:
-  grpc_addr: "0.0.0.0:9002"     # gRPC 服务监听地址
+  grpc_addr: "0.0.0.0:9002"         # gRPC 服务监听地址
+  gateway_rpc_addr: "127.0.0.1:9000" # 网关 gRPC 推送服务地址
 
 # MySQL 数据库
 mysql:

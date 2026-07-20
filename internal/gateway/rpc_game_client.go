@@ -127,3 +127,25 @@ func (c *GameRpcClient) PlayerOperation(ctx context.Context, playerID uint64, ro
 	logger.Info("gRPC PlayerOperation 响应", "player_id", playerID, "code", resp.Code)
 	return resp, nil
 }
+
+// PlayerOffline 调用游戏服玩家离线通知接口。
+// 玩家 WebSocket 断开连接时调用，通知游戏服处理离线逻辑。
+// 游戏服会根据玩家当前状态（游戏中/匹配中/无状态）做相应处理。
+func (c *GameRpcClient) PlayerOffline(ctx context.Context, playerID uint64, roomID string) (*rpc.PlayerOfflineResponse, error) {
+	if c == nil {
+		return nil, ErrRpcClientNotInit
+	}
+
+	logger.Info("gRPC PlayerOffline 请求", "player_id", playerID, "room_id", roomID)
+
+	resp, err := c.client.PlayerOffline(ctx, &rpc.PlayerOfflineRequest{
+		PlayerId: playerID,
+		RoomId:   roomID,
+	})
+	if err != nil {
+		return nil, wrapGrpcError(err)
+	}
+
+	logger.Info("gRPC PlayerOffline 响应", "player_id", playerID, "code", resp.Code, "msg", resp.Msg)
+	return resp, nil
+}

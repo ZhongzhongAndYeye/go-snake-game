@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -10,6 +11,9 @@ import (
 	"go-snake-game/internal/gateway"
 	"go-snake-game/pkg/config"
 	"go-snake-game/pkg/logger"
+	pb "go-snake-game/pkg/proto/rpc"
+
+	"google.golang.org/grpc"
 )
 
 func main() {
@@ -24,7 +28,6 @@ func main() {
 	}
 
 	// 3. 初始化登录服 gRPC 客户端
-	// 地址从配置文件读取，不硬编码
 	loginRpcAddr := config.GlobalCfg.Gateway.LoginRpcAddr
 	logger.Info("初始化登录服 gRPC 连接", "addr", loginRpcAddr)
 	gateway.InitLoginRpcClient(loginRpcAddr)
@@ -36,27 +39,53 @@ func main() {
 
 	// 5. 启动 WebSocket 监听服务
 	listenAddr := config.GlobalCfg.Gateway.ListenAddr
-	logger.Info("网关服务启动", "listen_addr", listenAddr)
+	logger.Info("网关 WebSocket 服务启动", "listen_addr", listenAddr)
 
 	server := gateway.NewGatewayServer(listenAddr)
 
+	// 6. 启动 gRPC 推送服务
+	grpcAddr := config.GlobalCfg.Gateway.GrpcAddr
+	logger.Info("网关 gRPC 推送服务启动", "grpc_addr", grpcAddr)
+
+	grpcServer := grpc.NewServer()
+	gatewayRpcServer := gateway.NewGatewayRpcServer()
+	pb.RegisterGatewayServiceServer(grpcServer, gatewayRpcServer)
+
+	lis, err := net.Listen("tcp", grpcAddr)
+	if err != nil {
+		logger.Error("网关 gRPC 监听失败", "grpc_addr", grpcAddr, "error", err.Error())
+		os.Exit(1)
+	}
+
 	stop := make(chan os.Signal, 1)
-	// syscall.SIGINT ： Ctrl+C 信号，用户在终端按 Ctrl+C 时触发
-	// syscall.SIGTERM ： 优雅终止 信号， kill 命令或 Docker/K8s 停止容器时触发
-	// 执行以上这两种操作时 会往stop通道发送信号，触发后续的关闭操作
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 
+	// 启动 WebSocket 服务（goroutine）
 	go func() {
 		if err := server.Start(); err != nil && err != http.ErrServerClosed {
-			logger.Error("网关服务启动失败", "error", err.Error())
+			logger.Error("网关 WebSocket 服务启动失败", "error", err.Error())
 			os.Exit(1)
 		}
 	}()
 
-	<-stop // 触发关闭网关服务
+	// 启动 gRPC 服务（goroutine）
+	go func() {
+		if err := grpcServer.Serve(lis); err != nil {
+			logger.Error("网关 gRPC 服务启动失败", "error", err.Error())
+			os.Exit(1)
+		}
+	}()
 
+	<-stop // 等待关闭信号
+
+	// 优雅关闭 gRPC 服务
+	logger.Info("正在关闭网关 gRPC 服务")
+	grpcServer.GracefulStop()
+
+	// 优雅关闭 WebSocket 服务
+	logger.Info("正在关闭网关 WebSocket 服务")
 	if err := server.Stop(); err != nil {
-		logger.Error("网关服务停止失败", "error", err.Error())
+		logger.Error("网关 WebSocket 服务停止失败", "error", err.Error())
 		os.Exit(1)
 	}
 }

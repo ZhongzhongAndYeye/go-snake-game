@@ -24,6 +24,189 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Point 网格坐标点
+type Point struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	X             int32                  `protobuf:"varint,1,opt,name=x,proto3" json:"x,omitempty"`
+	Y             int32                  `protobuf:"varint,2,opt,name=y,proto3" json:"y,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Point) Reset() {
+	*x = Point{}
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Point) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Point) ProtoMessage() {}
+
+func (x *Point) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Point.ProtoReflect.Descriptor instead.
+func (*Point) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_rpc_game_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *Point) GetX() int32 {
+	if x != nil {
+		return x.X
+	}
+	return 0
+}
+
+func (x *Point) GetY() int32 {
+	if x != nil {
+		return x.Y
+	}
+	return 0
+}
+
+// SnakeState 蛇的当前状态
+type SnakeState struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	Nickname      string                 `protobuf:"bytes,2,opt,name=nickname,proto3" json:"nickname,omitempty"`
+	Body          []*Point               `protobuf:"bytes,3,rep,name=body,proto3" json:"body,omitempty"`
+	Score         int32                  `protobuf:"varint,4,opt,name=score,proto3" json:"score,omitempty"`
+	IsAlive       bool                   `protobuf:"varint,5,opt,name=is_alive,json=isAlive,proto3" json:"is_alive,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SnakeState) Reset() {
+	*x = SnakeState{}
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SnakeState) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SnakeState) ProtoMessage() {}
+
+func (x *SnakeState) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SnakeState.ProtoReflect.Descriptor instead.
+func (*SnakeState) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_rpc_game_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *SnakeState) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *SnakeState) GetNickname() string {
+	if x != nil {
+		return x.Nickname
+	}
+	return ""
+}
+
+func (x *SnakeState) GetBody() []*Point {
+	if x != nil {
+		return x.Body
+	}
+	return nil
+}
+
+func (x *SnakeState) GetScore() int32 {
+	if x != nil {
+		return x.Score
+	}
+	return 0
+}
+
+func (x *SnakeState) GetIsAlive() bool {
+	if x != nil {
+		return x.IsAlive
+	}
+	return false
+}
+
+// FoodState 食物状态
+type FoodState struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Position      *Point                 `protobuf:"bytes,1,opt,name=position,proto3" json:"position,omitempty"`
+	Score         int32                  `protobuf:"varint,2,opt,name=score,proto3" json:"score,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FoodState) Reset() {
+	*x = FoodState{}
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FoodState) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FoodState) ProtoMessage() {}
+
+func (x *FoodState) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FoodState.ProtoReflect.Descriptor instead.
+func (*FoodState) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_rpc_game_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *FoodState) GetPosition() *Point {
+	if x != nil {
+		return x.Position
+	}
+	return nil
+}
+
+func (x *FoodState) GetScore() int32 {
+	if x != nil {
+		return x.Score
+	}
+	return 0
+}
+
 // PlayerInfo 玩家信息
 type PlayerInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -36,7 +219,7 @@ type PlayerInfo struct {
 
 func (x *PlayerInfo) Reset() {
 	*x = PlayerInfo{}
-	mi := &file_pkg_proto_rpc_game_proto_msgTypes[0]
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -48,7 +231,7 @@ func (x *PlayerInfo) String() string {
 func (*PlayerInfo) ProtoMessage() {}
 
 func (x *PlayerInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_rpc_game_proto_msgTypes[0]
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -61,7 +244,7 @@ func (x *PlayerInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlayerInfo.ProtoReflect.Descriptor instead.
 func (*PlayerInfo) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_rpc_game_proto_rawDescGZIP(), []int{0}
+	return file_pkg_proto_rpc_game_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *PlayerInfo) GetPlayerId() uint64 {
@@ -96,7 +279,7 @@ type StartMatchRequest struct {
 
 func (x *StartMatchRequest) Reset() {
 	*x = StartMatchRequest{}
-	mi := &file_pkg_proto_rpc_game_proto_msgTypes[1]
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -108,7 +291,7 @@ func (x *StartMatchRequest) String() string {
 func (*StartMatchRequest) ProtoMessage() {}
 
 func (x *StartMatchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_rpc_game_proto_msgTypes[1]
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -121,7 +304,7 @@ func (x *StartMatchRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StartMatchRequest.ProtoReflect.Descriptor instead.
 func (*StartMatchRequest) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_rpc_game_proto_rawDescGZIP(), []int{1}
+	return file_pkg_proto_rpc_game_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *StartMatchRequest) GetPlayerId() uint64 {
@@ -151,7 +334,7 @@ type StartMatchResponse struct {
 
 func (x *StartMatchResponse) Reset() {
 	*x = StartMatchResponse{}
-	mi := &file_pkg_proto_rpc_game_proto_msgTypes[2]
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -163,7 +346,7 @@ func (x *StartMatchResponse) String() string {
 func (*StartMatchResponse) ProtoMessage() {}
 
 func (x *StartMatchResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_rpc_game_proto_msgTypes[2]
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -176,7 +359,7 @@ func (x *StartMatchResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StartMatchResponse.ProtoReflect.Descriptor instead.
 func (*StartMatchResponse) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_rpc_game_proto_rawDescGZIP(), []int{2}
+	return file_pkg_proto_rpc_game_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *StartMatchResponse) GetCode() int32 {
@@ -217,7 +400,7 @@ type CancelMatchRequest struct {
 
 func (x *CancelMatchRequest) Reset() {
 	*x = CancelMatchRequest{}
-	mi := &file_pkg_proto_rpc_game_proto_msgTypes[3]
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -229,7 +412,7 @@ func (x *CancelMatchRequest) String() string {
 func (*CancelMatchRequest) ProtoMessage() {}
 
 func (x *CancelMatchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_rpc_game_proto_msgTypes[3]
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -242,7 +425,7 @@ func (x *CancelMatchRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CancelMatchRequest.ProtoReflect.Descriptor instead.
 func (*CancelMatchRequest) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_rpc_game_proto_rawDescGZIP(), []int{3}
+	return file_pkg_proto_rpc_game_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *CancelMatchRequest) GetPlayerId() uint64 {
@@ -263,7 +446,7 @@ type CancelMatchResponse struct {
 
 func (x *CancelMatchResponse) Reset() {
 	*x = CancelMatchResponse{}
-	mi := &file_pkg_proto_rpc_game_proto_msgTypes[4]
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -275,7 +458,7 @@ func (x *CancelMatchResponse) String() string {
 func (*CancelMatchResponse) ProtoMessage() {}
 
 func (x *CancelMatchResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_rpc_game_proto_msgTypes[4]
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -288,7 +471,7 @@ func (x *CancelMatchResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CancelMatchResponse.ProtoReflect.Descriptor instead.
 func (*CancelMatchResponse) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_rpc_game_proto_rawDescGZIP(), []int{4}
+	return file_pkg_proto_rpc_game_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *CancelMatchResponse) GetCode() int32 {
@@ -315,7 +498,7 @@ type GetRoomInfoRequest struct {
 
 func (x *GetRoomInfoRequest) Reset() {
 	*x = GetRoomInfoRequest{}
-	mi := &file_pkg_proto_rpc_game_proto_msgTypes[5]
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -327,7 +510,7 @@ func (x *GetRoomInfoRequest) String() string {
 func (*GetRoomInfoRequest) ProtoMessage() {}
 
 func (x *GetRoomInfoRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_rpc_game_proto_msgTypes[5]
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -340,7 +523,7 @@ func (x *GetRoomInfoRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRoomInfoRequest.ProtoReflect.Descriptor instead.
 func (*GetRoomInfoRequest) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_rpc_game_proto_rawDescGZIP(), []int{5}
+	return file_pkg_proto_rpc_game_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *GetRoomInfoRequest) GetRoomId() string {
@@ -353,18 +536,22 @@ func (x *GetRoomInfoRequest) GetRoomId() string {
 // GetRoomInfoResponse 获取房间信息响应
 type GetRoomInfoResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Code          int32                  `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"`                  // 业务状态码，0 成功，非 0 失败
-	Msg           string                 `protobuf:"bytes,2,opt,name=msg,proto3" json:"msg,omitempty"`                     // 提示信息
-	RoomId        string                 `protobuf:"bytes,3,opt,name=room_id,json=roomId,proto3" json:"room_id,omitempty"` // 房间 ID
-	Players       []*PlayerInfo          `protobuf:"bytes,4,rep,name=players,proto3" json:"players,omitempty"`             // 房间内玩家列表
-	Status        int32                  `protobuf:"varint,5,opt,name=status,proto3" json:"status,omitempty"`              // 房间状态，0 等待中，1 游戏中，2 已结束
+	Code          int32                  `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"`                               // 业务状态码，0 成功，非 0 失败
+	Msg           string                 `protobuf:"bytes,2,opt,name=msg,proto3" json:"msg,omitempty"`                                  // 提示信息
+	RoomId        string                 `protobuf:"bytes,3,opt,name=room_id,json=roomId,proto3" json:"room_id,omitempty"`              // 房间 ID
+	Players       []*PlayerInfo          `protobuf:"bytes,4,rep,name=players,proto3" json:"players,omitempty"`                          // 房间内玩家列表
+	Status        int32                  `protobuf:"varint,5,opt,name=status,proto3" json:"status,omitempty"`                           // 房间状态，0 等待中，1 游戏中，2 已结束
+	GameStatus    int32                  `protobuf:"varint,6,opt,name=game_status,json=gameStatus,proto3" json:"game_status,omitempty"` // 游戏阶段：1 未开始，2 进行中，3 暂停，4 已结束
+	Frame         int64                  `protobuf:"varint,7,opt,name=frame,proto3" json:"frame,omitempty"`                             // 当前帧序号
+	Snakes        []*SnakeState          `protobuf:"bytes,8,rep,name=snakes,proto3" json:"snakes,omitempty"`                            // 所有蛇的当前状态
+	Food          *FoodState             `protobuf:"bytes,9,opt,name=food,proto3" json:"food,omitempty"`                                // 当前食物位置
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetRoomInfoResponse) Reset() {
 	*x = GetRoomInfoResponse{}
-	mi := &file_pkg_proto_rpc_game_proto_msgTypes[6]
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -376,7 +563,7 @@ func (x *GetRoomInfoResponse) String() string {
 func (*GetRoomInfoResponse) ProtoMessage() {}
 
 func (x *GetRoomInfoResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_rpc_game_proto_msgTypes[6]
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -389,7 +576,7 @@ func (x *GetRoomInfoResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRoomInfoResponse.ProtoReflect.Descriptor instead.
 func (*GetRoomInfoResponse) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_rpc_game_proto_rawDescGZIP(), []int{6}
+	return file_pkg_proto_rpc_game_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *GetRoomInfoResponse) GetCode() int32 {
@@ -427,11 +614,168 @@ func (x *GetRoomInfoResponse) GetStatus() int32 {
 	return 0
 }
 
+func (x *GetRoomInfoResponse) GetGameStatus() int32 {
+	if x != nil {
+		return x.GameStatus
+	}
+	return 0
+}
+
+func (x *GetRoomInfoResponse) GetFrame() int64 {
+	if x != nil {
+		return x.Frame
+	}
+	return 0
+}
+
+func (x *GetRoomInfoResponse) GetSnakes() []*SnakeState {
+	if x != nil {
+		return x.Snakes
+	}
+	return nil
+}
+
+func (x *GetRoomInfoResponse) GetFood() *FoodState {
+	if x != nil {
+		return x.Food
+	}
+	return nil
+}
+
+// PlayerOperationRequest 玩家游戏操作请求
+type PlayerOperationRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"` // 玩家 ID
+	RoomId        string                 `protobuf:"bytes,2,opt,name=room_id,json=roomId,proto3" json:"room_id,omitempty"`        // 房间 ID
+	Direction     int32                  `protobuf:"varint,3,opt,name=direction,proto3" json:"direction,omitempty"`               // 方向：1 上，2 下，3 左，4 右
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PlayerOperationRequest) Reset() {
+	*x = PlayerOperationRequest{}
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PlayerOperationRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PlayerOperationRequest) ProtoMessage() {}
+
+func (x *PlayerOperationRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PlayerOperationRequest.ProtoReflect.Descriptor instead.
+func (*PlayerOperationRequest) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_rpc_game_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *PlayerOperationRequest) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *PlayerOperationRequest) GetRoomId() string {
+	if x != nil {
+		return x.RoomId
+	}
+	return ""
+}
+
+func (x *PlayerOperationRequest) GetDirection() int32 {
+	if x != nil {
+		return x.Direction
+	}
+	return 0
+}
+
+// PlayerOperationResponse 玩家游戏操作响应
+type PlayerOperationResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          int32                  `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"` // 业务状态码，0 成功，非 0 失败
+	Msg           string                 `protobuf:"bytes,2,opt,name=msg,proto3" json:"msg,omitempty"`    // 提示信息
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PlayerOperationResponse) Reset() {
+	*x = PlayerOperationResponse{}
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PlayerOperationResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PlayerOperationResponse) ProtoMessage() {}
+
+func (x *PlayerOperationResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PlayerOperationResponse.ProtoReflect.Descriptor instead.
+func (*PlayerOperationResponse) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_rpc_game_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *PlayerOperationResponse) GetCode() int32 {
+	if x != nil {
+		return x.Code
+	}
+	return 0
+}
+
+func (x *PlayerOperationResponse) GetMsg() string {
+	if x != nil {
+		return x.Msg
+	}
+	return ""
+}
+
 var File_pkg_proto_rpc_game_proto protoreflect.FileDescriptor
 
 const file_pkg_proto_rpc_game_proto_rawDesc = "" +
 	"\n" +
-	"\x18pkg/proto/rpc/game.proto\x12\x03rpc\"[\n" +
+	"\x18pkg/proto/rpc/game.proto\x12\x03rpc\"#\n" +
+	"\x05Point\x12\f\n" +
+	"\x01x\x18\x01 \x01(\x05R\x01x\x12\f\n" +
+	"\x01y\x18\x02 \x01(\x05R\x01y\"\x96\x01\n" +
+	"\n" +
+	"SnakeState\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1a\n" +
+	"\bnickname\x18\x02 \x01(\tR\bnickname\x12\x1e\n" +
+	"\x04body\x18\x03 \x03(\v2\n" +
+	".rpc.PointR\x04body\x12\x14\n" +
+	"\x05score\x18\x04 \x01(\x05R\x05score\x12\x19\n" +
+	"\bis_alive\x18\x05 \x01(\bR\aisAlive\"I\n" +
+	"\tFoodState\x12&\n" +
+	"\bposition\x18\x01 \x01(\v2\n" +
+	".rpc.PointR\bposition\x12\x14\n" +
+	"\x05score\x18\x02 \x01(\x05R\x05score\"[\n" +
 	"\n" +
 	"PlayerInfo\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1a\n" +
@@ -452,18 +796,31 @@ const file_pkg_proto_rpc_game_proto_rawDesc = "" +
 	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x10\n" +
 	"\x03msg\x18\x02 \x01(\tR\x03msg\"-\n" +
 	"\x12GetRoomInfoRequest\x12\x17\n" +
-	"\aroom_id\x18\x01 \x01(\tR\x06roomId\"\x97\x01\n" +
+	"\aroom_id\x18\x01 \x01(\tR\x06roomId\"\x9b\x02\n" +
 	"\x13GetRoomInfoResponse\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x10\n" +
 	"\x03msg\x18\x02 \x01(\tR\x03msg\x12\x17\n" +
 	"\aroom_id\x18\x03 \x01(\tR\x06roomId\x12)\n" +
 	"\aplayers\x18\x04 \x03(\v2\x0f.rpc.PlayerInfoR\aplayers\x12\x16\n" +
-	"\x06status\x18\x05 \x01(\x05R\x06status2\xd0\x01\n" +
+	"\x06status\x18\x05 \x01(\x05R\x06status\x12\x1f\n" +
+	"\vgame_status\x18\x06 \x01(\x05R\n" +
+	"gameStatus\x12\x14\n" +
+	"\x05frame\x18\a \x01(\x03R\x05frame\x12'\n" +
+	"\x06snakes\x18\b \x03(\v2\x0f.rpc.SnakeStateR\x06snakes\x12\"\n" +
+	"\x04food\x18\t \x01(\v2\x0e.rpc.FoodStateR\x04food\"l\n" +
+	"\x16PlayerOperationRequest\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x17\n" +
+	"\aroom_id\x18\x02 \x01(\tR\x06roomId\x12\x1c\n" +
+	"\tdirection\x18\x03 \x01(\x05R\tdirection\"?\n" +
+	"\x17PlayerOperationResponse\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x10\n" +
+	"\x03msg\x18\x02 \x01(\tR\x03msg2\x9e\x02\n" +
 	"\vGameService\x12=\n" +
 	"\n" +
 	"StartMatch\x12\x16.rpc.StartMatchRequest\x1a\x17.rpc.StartMatchResponse\x12@\n" +
 	"\vCancelMatch\x12\x17.rpc.CancelMatchRequest\x1a\x18.rpc.CancelMatchResponse\x12@\n" +
-	"\vGetRoomInfo\x12\x17.rpc.GetRoomInfoRequest\x1a\x18.rpc.GetRoomInfoResponseB\x13Z\x11pkg/proto/rpc;rpcb\x06proto3"
+	"\vGetRoomInfo\x12\x17.rpc.GetRoomInfoRequest\x1a\x18.rpc.GetRoomInfoResponse\x12L\n" +
+	"\x0fPlayerOperation\x12\x1b.rpc.PlayerOperationRequest\x1a\x1c.rpc.PlayerOperationResponseB\x13Z\x11pkg/proto/rpc;rpcb\x06proto3"
 
 var (
 	file_pkg_proto_rpc_game_proto_rawDescOnce sync.Once
@@ -477,29 +834,40 @@ func file_pkg_proto_rpc_game_proto_rawDescGZIP() []byte {
 	return file_pkg_proto_rpc_game_proto_rawDescData
 }
 
-var file_pkg_proto_rpc_game_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_pkg_proto_rpc_game_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_pkg_proto_rpc_game_proto_goTypes = []any{
-	(*PlayerInfo)(nil),          // 0: rpc.PlayerInfo
-	(*StartMatchRequest)(nil),   // 1: rpc.StartMatchRequest
-	(*StartMatchResponse)(nil),  // 2: rpc.StartMatchResponse
-	(*CancelMatchRequest)(nil),  // 3: rpc.CancelMatchRequest
-	(*CancelMatchResponse)(nil), // 4: rpc.CancelMatchResponse
-	(*GetRoomInfoRequest)(nil),  // 5: rpc.GetRoomInfoRequest
-	(*GetRoomInfoResponse)(nil), // 6: rpc.GetRoomInfoResponse
+	(*Point)(nil),                   // 0: rpc.Point
+	(*SnakeState)(nil),              // 1: rpc.SnakeState
+	(*FoodState)(nil),               // 2: rpc.FoodState
+	(*PlayerInfo)(nil),              // 3: rpc.PlayerInfo
+	(*StartMatchRequest)(nil),       // 4: rpc.StartMatchRequest
+	(*StartMatchResponse)(nil),      // 5: rpc.StartMatchResponse
+	(*CancelMatchRequest)(nil),      // 6: rpc.CancelMatchRequest
+	(*CancelMatchResponse)(nil),     // 7: rpc.CancelMatchResponse
+	(*GetRoomInfoRequest)(nil),      // 8: rpc.GetRoomInfoRequest
+	(*GetRoomInfoResponse)(nil),     // 9: rpc.GetRoomInfoResponse
+	(*PlayerOperationRequest)(nil),  // 10: rpc.PlayerOperationRequest
+	(*PlayerOperationResponse)(nil), // 11: rpc.PlayerOperationResponse
 }
 var file_pkg_proto_rpc_game_proto_depIdxs = []int32{
-	0, // 0: rpc.GetRoomInfoResponse.players:type_name -> rpc.PlayerInfo
-	1, // 1: rpc.GameService.StartMatch:input_type -> rpc.StartMatchRequest
-	3, // 2: rpc.GameService.CancelMatch:input_type -> rpc.CancelMatchRequest
-	5, // 3: rpc.GameService.GetRoomInfo:input_type -> rpc.GetRoomInfoRequest
-	2, // 4: rpc.GameService.StartMatch:output_type -> rpc.StartMatchResponse
-	4, // 5: rpc.GameService.CancelMatch:output_type -> rpc.CancelMatchResponse
-	6, // 6: rpc.GameService.GetRoomInfo:output_type -> rpc.GetRoomInfoResponse
-	4, // [4:7] is the sub-list for method output_type
-	1, // [1:4] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	0,  // 0: rpc.SnakeState.body:type_name -> rpc.Point
+	0,  // 1: rpc.FoodState.position:type_name -> rpc.Point
+	3,  // 2: rpc.GetRoomInfoResponse.players:type_name -> rpc.PlayerInfo
+	1,  // 3: rpc.GetRoomInfoResponse.snakes:type_name -> rpc.SnakeState
+	2,  // 4: rpc.GetRoomInfoResponse.food:type_name -> rpc.FoodState
+	4,  // 5: rpc.GameService.StartMatch:input_type -> rpc.StartMatchRequest
+	6,  // 6: rpc.GameService.CancelMatch:input_type -> rpc.CancelMatchRequest
+	8,  // 7: rpc.GameService.GetRoomInfo:input_type -> rpc.GetRoomInfoRequest
+	10, // 8: rpc.GameService.PlayerOperation:input_type -> rpc.PlayerOperationRequest
+	5,  // 9: rpc.GameService.StartMatch:output_type -> rpc.StartMatchResponse
+	7,  // 10: rpc.GameService.CancelMatch:output_type -> rpc.CancelMatchResponse
+	9,  // 11: rpc.GameService.GetRoomInfo:output_type -> rpc.GetRoomInfoResponse
+	11, // 12: rpc.GameService.PlayerOperation:output_type -> rpc.PlayerOperationResponse
+	9,  // [9:13] is the sub-list for method output_type
+	5,  // [5:9] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_pkg_proto_rpc_game_proto_init() }
@@ -513,7 +881,7 @@ func file_pkg_proto_rpc_game_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_pkg_proto_rpc_game_proto_rawDesc), len(file_pkg_proto_rpc_game_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

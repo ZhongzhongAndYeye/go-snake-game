@@ -11,7 +11,8 @@ import (
 // RoomManager 房间管理器，用 sync.Map 存储所有房间，key 为 roomID。
 // sync.Map 适合读多写少的场景，且无需额外加锁，并发安全。
 type RoomManager struct {
-	rooms sync.Map
+	rooms       sync.Map // key: roomID, value: *Room
+	playerToRoom sync.Map // key: playerID (uint64), value: roomID (string)
 }
 
 var (
@@ -61,4 +62,24 @@ func (m *RoomManager) GetRoomCount() int {
 		return true
 	})
 	return count
+}
+
+// BindPlayerToRoom 将玩家绑定到房间。
+func (m *RoomManager) BindPlayerToRoom(playerID uint64, roomID string) {
+	m.playerToRoom.Store(playerID, roomID)
+}
+
+// GetPlayerRoom 根据玩家 ID 查询玩家所在的房间 ID。
+// 返回房间 ID 和是否存在。
+func (m *RoomManager) GetPlayerRoom(playerID uint64) (string, bool) {
+	val, ok := m.playerToRoom.Load(playerID)
+	if !ok {
+		return "", false
+	}
+	return val.(string), true
+}
+
+// UnbindPlayerRoom 解绑玩家与房间的关联。
+func (m *RoomManager) UnbindPlayerRoom(playerID uint64) {
+	m.playerToRoom.Delete(playerID)
 }

@@ -62,20 +62,27 @@ func CreatePlayer(player *model.Player) error {
 
 // UpdatePlayerScore 更新玩家最高分。
 // 只有当新分数大于当前最高分才会更新。
+// 如果玩家不存在返回 ErrPlayerNotFound，如果分数未超过当前最高分则静默忽略。
 // 参数 playerID: 玩家 ID
 // 参数 score: 新的分数
 // 返回: 可能的错误（如用户不存在、数据库异常等）
 func UpdatePlayerScore(playerID uint64, score int) error {
+	// 先检查玩家是否存在
+	var count int64
+	if err := db.GlobalDB.Model(&model.Player{}).Where("id = ?", playerID).Count(&count).Error; err != nil {
+		return err
+	}
+	if count == 0 {
+		return ErrPlayerNotFound
+	}
+
+	// 只有当新分数大于当前最高分时才更新
 	result := db.GlobalDB.Model(&model.Player{}).
 		Where("id = ? AND max_score < ?", playerID, score).
 		Update("max_score", score)
 
 	if result.Error != nil {
 		return result.Error
-	}
-
-	if result.RowsAffected == 0 {
-		return ErrPlayerNotFound
 	}
 
 	return nil

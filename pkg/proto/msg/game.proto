@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+package msg;
+
+option go_package = "pkg/proto/msg";
+
+// ---- 公共坐标点 ----
+
+// Point 网格坐标点，用于蛇身、食物等位置描述
+message Point {
+  int32 x = 1; // 横坐标（列），范围 0 ~ map_width-1
+  int32 y = 2; // 纵坐标（行），范围 0 ~ map_height-1
+}
+
+// ---- 嵌套状态结构 ----
+
+// SnakeState 蛇的当前状态，用于游戏开始和帧同步时广播
+message SnakeState {
+  uint64 player_id = 1; // 玩家 ID
+  string nickname  = 2; // 玩家昵称
+  repeated Point body = 3; // 蛇身坐标列表，索引 0 为蛇头
+  int32  score     = 4; // 当前得分
+  bool   is_alive  = 5; // 是否存活
+}
+
+// FoodState 食物状态
+message FoodState {
+  Point position   = 1; // 食物所在坐标
+  int32 score      = 2; // 吃掉该食物获得的分数
+}
+
+// PlayerRank 玩家排名，用于游戏结束结算
+message PlayerRank {
+  uint64 player_id = 1; // 玩家 ID
+  string nickname  = 2; // 玩家昵称
+  int32  score     = 3; // 最终得分
+  int32  rank      = 4; // 排名，1 为第一名
+}
+
+// ---- 游戏操作 ----
+
+// 方向操作请求（客户端 → 游戏服）
+message GameOperationReq {
+  int32 direction = 1; // 方向：1 上，2 下，3 左，4 右
+}
+
+// 房间信息查询请求（客户端 → 游戏服）
+message RoomInfoQueryReq {
+  string room_id = 1; // 房间 ID，为空时查询自己所在房间
+}
+
+// ---- 游戏状态同步 ----
+
+// 游戏开始广播（游戏服 → 客户端）
+// 房间内所有玩家同时收到，包含地图信息和双方初始状态
+message GameStartNotify {
+  int32               map_width  = 1; // 地图宽度
+  int32               map_height = 2; // 地图高度
+  repeated SnakeState snakes     = 3; // 所有玩家的蛇初始状态
+  FoodState           food       = 4; // 第一个食物位置
+}
+
+// 帧状态同步（游戏服 → 客户端）
+// 每帧广播所有蛇的当前状态，客户端据此更新画面
+message GameStateSync {
+  int64               frame = 1; // 帧序号，从 1 开始递增
+  repeated SnakeState snakes = 2; // 所有玩家的蛇当前状态
+  FoodState           food   = 3; // 当前食物位置
+}
+
+// 游戏结束广播（游戏服 → 客户端）
+// 游戏结束时通知所有玩家最终排名
+message GameOverNotify {
+  repeated PlayerRank ranks = 1; // 玩家排名列表，按排名升序排列
+}

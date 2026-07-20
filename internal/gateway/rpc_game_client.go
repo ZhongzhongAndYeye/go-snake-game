@@ -106,3 +106,24 @@ func (c *GameRpcClient) GetRoomInfo(ctx context.Context, roomID string) (*rpc.Ge
 	logger.Info("gRPC GetRoomInfo 响应", "room_id", roomID, "code", resp.Code, "player_count", len(resp.Players))
 	return resp, nil
 }
+
+// PlayerOperation 调用游戏服玩家操作接口。
+func (c *GameRpcClient) PlayerOperation(ctx context.Context, playerID uint64, roomID string, direction int32) (*rpc.PlayerOperationResponse, error) {
+	if c == nil {
+		return nil, ErrRpcClientNotInit
+	}
+
+	logger.Info("gRPC PlayerOperation 请求", "player_id", playerID, "room_id", roomID, "direction", direction)
+
+	resp, err := c.client.PlayerOperation(ctx, &rpc.PlayerOperationRequest{
+		PlayerId:  playerID,
+		RoomId:    roomID,
+		Direction: direction,
+	})
+	if err != nil {
+		return nil, wrapGrpcError(err)
+	}
+
+	logger.Info("gRPC PlayerOperation 响应", "player_id", playerID, "code", resp.Code)
+	return resp, nil
+}

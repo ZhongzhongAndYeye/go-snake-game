@@ -5,6 +5,7 @@ package network
 // 范围划分：
 //   - 1000-1999：基础通信（心跳、登录、错误）
 //   - 2000-2999：房间匹配
+//   - 3000-3999：游戏战斗
 const (
 	// ---- 心跳相关 ----
 	MsgIDHeartbeatReq  uint16 = 1001 // 客户端 → 服务端：心跳请求
@@ -27,4 +28,12 @@ const (
 	MsgIDMatchCancelReq  uint16 = 2003 // 客户端 → 游戏服：取消匹配请求
 	MsgIDMatchCancelResp uint16 = 2004 // 游戏服 → 客户端：取消匹配响应
 	MsgIDRoomInfoNotify  uint16 = 2005 // 游戏服 → 客户端：房间信息推送
+	MsgIDGameRoomInfoReq  uint16 = 2006 // 客户端 → 游戏服：查询房间信息请求
+	MsgIDGameRoomInfoResp uint16 = 2007 // 游戏服 → 客户端：查询房间信息响应
+
+	// ---- 游戏战斗相关 ----
+	MsgIDGameOperationReq uint16 = 3001 // 客户端 → 游戏服：方向操作请求
+	MsgIDGameStartNotify  uint16 = 3002 // 游戏服 → 客户端：游戏开始广播
+	MsgIDGameStateSync    uint16 = 3003 // 游戏服 → 客户端：帧状态同步
+	MsgIDGameOverNotify   uint16 = 3004 // 游戏服 → 客户端：游戏结束广播
 )

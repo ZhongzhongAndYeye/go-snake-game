@@ -46,8 +46,10 @@ func NewGatewayServer(listenAddr string) *GatewayServer {
 	router.Use(AuthMiddleware)
 
 	// 注册游戏业务消息（需鉴权，经过 AuthMiddleware）
-	router.Register(network.MsgIDMatchStartReq, MatchStartHandler)   // 2001：发起匹配
-	router.Register(network.MsgIDMatchCancelReq, MatchCancelHandler) // 2003：取消匹配
+	router.Register(network.MsgIDMatchStartReq, MatchStartHandler)       // 2001：发起匹配
+	router.Register(network.MsgIDMatchCancelReq, MatchCancelHandler)     // 2003：取消匹配
+	router.Register(network.MsgIDGameOperationReq, GameOperationHandler) // 3001：游戏操作
+	router.Register(network.MsgIDGameRoomInfoReq, RoomInfoQueryHandler)  // 2006：查询房间信息
 
 	return &GatewayServer{
 		listenAddr: listenAddr,

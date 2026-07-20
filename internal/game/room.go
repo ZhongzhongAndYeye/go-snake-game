@@ -35,7 +35,7 @@ type PlayerInfo struct {
 	IsOnline bool   // 是否在线
 }
 
-// Room 游戏房间，管理双人匹配的对战状态。
+// Room 游戏房间，管理双人匹配的对战状态和游戏生命周期。
 type Room struct {
 	mu         sync.Mutex
 	RoomID     string        // 房间 ID，全局唯一
@@ -43,6 +43,16 @@ type Room struct {
 	Players    []*PlayerInfo // 房间内玩家列表
 	CreateTime time.Time     // 房间创建时间
 	StartTime  time.Time     // 游戏开始时间（零值表示未开始）
+
+	// 游戏状态（仅在 Status == Playing 时有效）
+	GameStatus  int               // 游戏阶段：1 未开始，2 进行中，3 暂停，4 已结束
+	Frame       int64             // 当前帧序号，从 1 开始递增
+	Snakes      map[uint64]*Snake // 房间内所有玩家的蛇实例，key 为 playerID
+	CurrentFood *Food             // 当前地图上的食物
+	MapWidth    int               // 地图宽度
+	MapHeight   int               // 地图高度
+	ticker      *time.Ticker      // 游戏帧定时器，10 FPS（100ms 一帧）
+	stopCh      chan struct{}     // 停止信号通道，关闭后游戏主循环退出
 }
 
 // NewRoom 创建新房间。
@@ -52,6 +62,10 @@ func NewRoom(roomID string) *Room {
 		Status:     RoomStatusWaiting,
 		Players:    make([]*PlayerInfo, 0, maxRoomPlayers),
 		CreateTime: time.Now(),
+		GameStatus: GameStatusNotStarted,
+		MapWidth:   DefaultMapWidth,
+		MapHeight:  DefaultMapHeight,
+		Snakes:     make(map[uint64]*Snake),
 	}
 }
 
@@ -105,12 +119,9 @@ func (r *Room) RemovePlayer(playerID uint64) error {
 	return ErrPlayerNotInRoom
 }
 
-// StartGame 开始游戏，将房间状态修改为游戏中。
-// 房间未等待中或玩家不足 2 人时返回错误。
-func (r *Room) StartGame() error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
+// setRoomPlayingLocked 将房间状态标记为游戏中。
+// 调用方必须持有 r.mu 锁。
+func (r *Room) setRoomPlayingLocked() error {
 	if r.Status == RoomStatusPlaying {
 		return ErrRoomInGame
 	}
@@ -128,12 +139,9 @@ func (r *Room) StartGame() error {
 	return nil
 }
 
-// EndGame 结束游戏，将房间状态修改为已结束。
-// 房间未开始游戏时返回错误。
-func (r *Room) EndGame() error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
+// setRoomEndedLocked 将房间状态标记为已结束。
+// 调用方必须持有 r.mu 锁。
+func (r *Room) setRoomEndedLocked() error {
 	if r.Status != RoomStatusPlaying {
 		return ErrRoomNotStarted
 	}

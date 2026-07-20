@@ -22,16 +22,17 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	GameService_StartMatch_FullMethodName  = "/rpc.GameService/StartMatch"
-	GameService_CancelMatch_FullMethodName = "/rpc.GameService/CancelMatch"
-	GameService_GetRoomInfo_FullMethodName = "/rpc.GameService/GetRoomInfo"
+	GameService_StartMatch_FullMethodName      = "/rpc.GameService/StartMatch"
+	GameService_CancelMatch_FullMethodName     = "/rpc.GameService/CancelMatch"
+	GameService_GetRoomInfo_FullMethodName     = "/rpc.GameService/GetRoomInfo"
+	GameService_PlayerOperation_FullMethodName = "/rpc.GameService/PlayerOperation"
 )
 
 // GameServiceClient is the client API for GameService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// GameService 游戏服务，处理玩家匹配和房间信息查询。
+// GameService 游戏服务，处理玩家匹配、房间信息查询和游戏操作。
 type GameServiceClient interface {
 	// StartMatch 发起匹配
 	StartMatch(ctx context.Context, in *StartMatchRequest, opts ...grpc.CallOption) (*StartMatchResponse, error)
@@ -39,6 +40,8 @@ type GameServiceClient interface {
 	CancelMatch(ctx context.Context, in *CancelMatchRequest, opts ...grpc.CallOption) (*CancelMatchResponse, error)
 	// GetRoomInfo 获取当前房间信息
 	GetRoomInfo(ctx context.Context, in *GetRoomInfoRequest, opts ...grpc.CallOption) (*GetRoomInfoResponse, error)
+	// PlayerOperation 玩家游戏操作（如方向变更）
+	PlayerOperation(ctx context.Context, in *PlayerOperationRequest, opts ...grpc.CallOption) (*PlayerOperationResponse, error)
 }
 
 type gameServiceClient struct {
@@ -79,11 +82,21 @@ func (c *gameServiceClient) GetRoomInfo(ctx context.Context, in *GetRoomInfoRequ
 	return out, nil
 }
 
+func (c *gameServiceClient) PlayerOperation(ctx context.Context, in *PlayerOperationRequest, opts ...grpc.CallOption) (*PlayerOperationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PlayerOperationResponse)
+	err := c.cc.Invoke(ctx, GameService_PlayerOperation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GameServiceServer is the server API for GameService service.
 // All implementations must embed UnimplementedGameServiceServer
 // for forward compatibility.
 //
-// GameService 游戏服务，处理玩家匹配和房间信息查询。
+// GameService 游戏服务，处理玩家匹配、房间信息查询和游戏操作。
 type GameServiceServer interface {
 	// StartMatch 发起匹配
 	StartMatch(context.Context, *StartMatchRequest) (*StartMatchResponse, error)
@@ -91,6 +104,8 @@ type GameServiceServer interface {
 	CancelMatch(context.Context, *CancelMatchRequest) (*CancelMatchResponse, error)
 	// GetRoomInfo 获取当前房间信息
 	GetRoomInfo(context.Context, *GetRoomInfoRequest) (*GetRoomInfoResponse, error)
+	// PlayerOperation 玩家游戏操作（如方向变更）
+	PlayerOperation(context.Context, *PlayerOperationRequest) (*PlayerOperationResponse, error)
 	mustEmbedUnimplementedGameServiceServer()
 }
 
@@ -109,6 +124,9 @@ func (UnimplementedGameServiceServer) CancelMatch(context.Context, *CancelMatchR
 }
 func (UnimplementedGameServiceServer) GetRoomInfo(context.Context, *GetRoomInfoRequest) (*GetRoomInfoResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetRoomInfo not implemented")
+}
+func (UnimplementedGameServiceServer) PlayerOperation(context.Context, *PlayerOperationRequest) (*PlayerOperationResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method PlayerOperation not implemented")
 }
 func (UnimplementedGameServiceServer) mustEmbedUnimplementedGameServiceServer() {}
 func (UnimplementedGameServiceServer) testEmbeddedByValue()                     {}
@@ -185,6 +203,24 @@ func _GameService_GetRoomInfo_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GameService_PlayerOperation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PlayerOperationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GameServiceServer).PlayerOperation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GameService_PlayerOperation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GameServiceServer).PlayerOperation(ctx, req.(*PlayerOperationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GameService_ServiceDesc is the grpc.ServiceDesc for GameService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -203,6 +239,10 @@ var GameService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetRoomInfo",
 			Handler:    _GameService_GetRoomInfo_Handler,
+		},
+		{
+			MethodName: "PlayerOperation",
+			Handler:    _GameService_PlayerOperation_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

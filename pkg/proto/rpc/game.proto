@@ -6,7 +6,7 @@ syntax = "proto3";
 package rpc;
 option go_package = "pkg/proto/rpc;rpc";
 
-// GameService 游戏服务，处理玩家匹配和房间信息查询。
+// GameService 游戏服务，处理玩家匹配、房间信息查询和游戏操作。
 service GameService {
   // StartMatch 发起匹配
   rpc StartMatch(StartMatchRequest) returns (StartMatchResponse);
@@ -14,6 +14,29 @@ service GameService {
   rpc CancelMatch(CancelMatchRequest) returns (CancelMatchResponse);
   // GetRoomInfo 获取当前房间信息
   rpc GetRoomInfo(GetRoomInfoRequest) returns (GetRoomInfoResponse);
+  // PlayerOperation 玩家游戏操作（如方向变更）
+  rpc PlayerOperation(PlayerOperationRequest) returns (PlayerOperationResponse);
+}
+
+// Point 网格坐标点
+message Point {
+  int32 x = 1;
+  int32 y = 2;
+}
+
+// SnakeState 蛇的当前状态
+message SnakeState {
+  uint64 player_id = 1;
+  string nickname  = 2;
+  repeated Point body = 3;
+  int32  score     = 4;
+  bool   is_alive  = 5;
+}
+
+// FoodState 食物状态
+message FoodState {
+  Point position = 1;
+  int32 score    = 2;
 }
 
 // PlayerInfo 玩家信息
@@ -55,9 +78,26 @@ message GetRoomInfoRequest {
 
 // GetRoomInfoResponse 获取房间信息响应
 message GetRoomInfoResponse {
-  int32         code    = 1; // 业务状态码，0 成功，非 0 失败
-  string        msg     = 2; // 提示信息
-  string        room_id = 3; // 房间 ID
-  repeated PlayerInfo players = 4; // 房间内玩家列表
-  int32         status  = 5; // 房间状态，0 等待中，1 游戏中，2 已结束
+  int32          code       = 1; // 业务状态码，0 成功，非 0 失败
+  string         msg        = 2; // 提示信息
+  string         room_id    = 3; // 房间 ID
+  repeated PlayerInfo players    = 4; // 房间内玩家列表
+  int32          status     = 5; // 房间状态，0 等待中，1 游戏中，2 已结束
+  int32          game_status = 6; // 游戏阶段：1 未开始，2 进行中，3 暂停，4 已结束
+  int64          frame      = 7; // 当前帧序号
+  repeated SnakeState snakes    = 8; // 所有蛇的当前状态
+  FoodState      food       = 9; // 当前食物位置
+}
+
+// PlayerOperationRequest 玩家游戏操作请求
+message PlayerOperationRequest {
+  uint64 player_id = 1; // 玩家 ID
+  string room_id   = 2; // 房间 ID
+  int32  direction = 3; // 方向：1 上，2 下，3 左，4 右
+}
+
+// PlayerOperationResponse 玩家游戏操作响应
+message PlayerOperationResponse {
+  int32  code = 1; // 业务状态码，0 成功，非 0 失败
+  string msg  = 2; // 提示信息
 }

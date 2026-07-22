@@ -1,7 +1,9 @@
-package gateway
+package handler
 
 import (
 	"errors"
+
+	"go-snake-game/internal/gateway/rpc"
 
 	"go-snake-game/pkg/errcode"
 	"go-snake-game/pkg/logger"
@@ -12,39 +14,35 @@ import (
 )
 
 // RegisterHandler 注册请求处理器
-func RegisterHandler(s *Session, packet *network.Packet) {
-	logger.Info("收到注册请求", "session_id", s.logID(), "seq_id", packet.SeqID)
+func RegisterHandler(s Session, packet *network.Packet) {
+	logger.Info("收到注册请求", "session_id", s.LogID(), "seq_id", packet.SeqID)
 
-	// 反序列化请求体
+	// 解析注册请求，直接使用proto函数中定义好的结构体即可
 	req := &msg.RegisterReq{}
 	if err := proto.Unmarshal(packet.Body, req); err != nil {
-		logger.Warn("注册请求反序列化失败", "session_id", s.logID(), "error", err)
+		logger.Warn("注册请求反序列化失败", "session_id", s.LogID(), "error", err)
 		s.SendError(errcode.ErrParam, "请求参数格式错误")
 		return
 	}
 
-	// 参数校验
 	username := req.GetUsername()
 	password := req.GetPassword()
 	if err := validateRegisterParams(username, password); err != nil {
-		logger.Warn("注册参数校验失败", "session_id", s.logID(), "username", username, "error", err)
+		logger.Warn("注册参数校验失败", "session_id", s.LogID(), "username", username, "error", err)
 		s.SendError(errcode.ErrParam, err.Error())
 		return
 	}
 
-	// 创建 gRPC 请求上下文（5秒超时 + TraceID 透传）
-	ctx, cancel := contextWithTraceID(s)
+	ctx, cancel := ContextWithTraceID(s)
 	defer cancel()
 
-	// 调用登录服 gRPC 注册接口
-	resp, err := GlobalLoginClient.Register(ctx, username, password)
+	resp, err := rpc.GlobalLoginClient.Register(ctx, username, password)
 	if err != nil {
-		logger.Error("调用登录服注册接口失败", "session_id", s.logID(), "username", username, "error", err)
+		logger.Error("调用登录服注册接口失败", "session_id", s.LogID(), "username", username, "error", err)
 		s.SendError(errcode.ErrSystem, "注册失败，请稍后重试")
 		return
 	}
 
-	// 封装注册响应
 	registerResp := &msg.RegisterResp{
 		Code:     resp.Code,
 		Msg:      resp.Msg,
@@ -52,51 +50,44 @@ func RegisterHandler(s *Session, packet *network.Packet) {
 	}
 
 	s.SendProtoResponse(network.MsgIDRegisterResp, packet.SeqID, registerResp)
-
-	logger.Info("注册响应发送成功", "session_id", s.logID(), "username", username, "player_id", resp.PlayerId, "code", resp.Code)
+	logger.Info("注册响应发送成功", "session_id", s.LogID(), "username", username, "player_id", resp.PlayerId, "code", resp.Code)
 }
 
 // LoginHandler 登录请求处理器
-func LoginHandler(s *Session, packet *network.Packet) {
-	logger.Info("收到登录请求", "session_id", s.logID(), "seq_id", packet.SeqID)
+func LoginHandler(s Session, packet *network.Packet) {
+	logger.Info("收到登录请求", "session_id", s.LogID(), "seq_id", packet.SeqID)
 
-	// 反序列化请求体
 	req := &msg.LoginReq{}
 	if err := proto.Unmarshal(packet.Body, req); err != nil {
-		logger.Warn("登录请求反序列化失败", "session_id", s.logID(), "error", err)
+		logger.Warn("登录请求反序列化失败", "session_id", s.LogID(), "error", err)
 		s.SendError(errcode.ErrParam, "请求参数格式错误")
 		return
 	}
 
-	// 参数校验
 	username := req.GetUsername()
 	password := req.GetPassword()
 	if err := validateLoginParams(username, password); err != nil {
-		logger.Warn("登录参数校验失败", "session_id", s.logID(), "username", username, "error", err)
+		logger.Warn("登录参数校验失败", "session_id", s.LogID(), "username", username, "error", err)
 		s.SendError(errcode.ErrParam, err.Error())
 		return
 	}
 
-	// 创建 gRPC 请求上下文（5秒超时 + TraceID 透传）
-	ctx, cancel := contextWithTraceID(s)
+	ctx, cancel := ContextWithTraceID(s)
 	defer cancel()
 
-	// 调用登录服 gRPC 登录接口
-	resp, err := GlobalLoginClient.Login(ctx, username, password)
+	resp, err := rpc.GlobalLoginClient.Login(ctx, username, password)
 	if err != nil {
-		logger.Error("调用登录服登录接口失败", "session_id", s.logID(), "username", username, "error", err)
+		logger.Error("调用登录服登录接口失败", "session_id", s.LogID(), "username", username, "error", err)
 		s.SendError(errcode.ErrSystem, "登录失败，请稍后重试")
 		return
 	}
 
-	// 登录成功，将 playerID 和登录状态写入 Session
 	if resp.Code == 0 && resp.PlayerId > 0 {
 		s.SetPlayerID(uint64(resp.PlayerId))
 		s.SetLogin(true)
-		logger.Info("玩家登录成功，Session 绑定玩家 ID", "session_id", s.logID(), "player_id", resp.PlayerId, "username", username)
+		logger.Info("玩家登录成功，Session 绑定玩家 ID", "session_id", s.LogID(), "player_id", resp.PlayerId, "username", username)
 	}
 
-	// 封装登录响应
 	loginResp := &msg.LoginResp{
 		Code:     resp.Code,
 		Msg:      resp.Msg,
@@ -105,11 +96,9 @@ func LoginHandler(s *Session, packet *network.Packet) {
 	}
 
 	s.SendProtoResponse(network.MsgIDLoginResp, packet.SeqID, loginResp)
-
-	logger.Info("登录响应发送成功", "session_id", s.logID(), "username", username, "player_id", resp.PlayerId, "code", resp.Code)
+	logger.Info("登录响应发送成功", "session_id", s.LogID(), "username", username, "player_id", resp.PlayerId, "code", resp.Code)
 }
 
-// 校验注册参数
 func validateRegisterParams(username, password string) error {
 	if username == "" {
 		return errors.New("用户名为空")
@@ -132,7 +121,6 @@ func validateRegisterParams(username, password string) error {
 	return nil
 }
 
-// 校验登录参数
 func validateLoginParams(username, password string) error {
 	if username == "" {
 		return errors.New("用户名为空")

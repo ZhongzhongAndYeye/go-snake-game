@@ -1,6 +1,6 @@
 // 匹配管理器 — 基于 Redis List 实现双人匹配队列
 
-package game
+package match
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"go-snake-game/internal/game/rpc"
 	"go-snake-game/pkg/db"
 	"go-snake-game/pkg/errcode"
 	"go-snake-game/pkg/logger"
@@ -259,7 +260,7 @@ func (m *MatchManager) scanTimeoutPlayers() {
 		logger.Info("匹配超时，玩家已从队列移除", "player_id", item.PlayerID, "waited", now.Sub(item.JoinTime))
 
 		// 通过网关推送超时通知
-		if GlobalGatewayClient != nil {
+		if rpc.GlobalGatewayClient != nil {
 			notify := &msg.MatchCancelResp{
 				Code: errcode.ErrMatchTimeout,
 				Msg:  "匹配超时，请重新发起匹配",
@@ -269,7 +270,7 @@ func (m *MatchManager) scanTimeoutPlayers() {
 				logger.Warn("匹配超时通知序列化失败", "player_id", item.PlayerID, "error", marshalErr.Error())
 				continue
 			}
-			GlobalGatewayClient.SendPlayerMsg(item.PlayerID, network.MsgIDMatchCancelResp, body)
+			rpc.GlobalGatewayClient.SendPlayerMsg(item.PlayerID, network.MsgIDMatchCancelResp, body)
 		}
 	}
 

@@ -9,6 +9,7 @@ import (
 	"syscall"
 
 	"go-snake-game/internal/gateway"
+	gwRpc "go-snake-game/internal/gateway/rpc"
 	"go-snake-game/pkg/config"
 	"go-snake-game/pkg/health"
 	"go-snake-game/pkg/logger"
@@ -31,12 +32,12 @@ func main() {
 	// 3. 初始化登录服 gRPC 客户端
 	loginRpcAddr := config.GlobalCfg.Gateway.LoginRpcAddr
 	logger.Info("初始化登录服 gRPC 连接", "addr", loginRpcAddr)
-	gateway.InitLoginRpcClient(loginRpcAddr)
+	gwRpc.InitLoginRpcClient(loginRpcAddr)
 
 	// 4. 初始化游戏服 gRPC 客户端
 	gameRpcAddr := config.GlobalCfg.Gateway.GameRpcAddr
 	logger.Info("初始化游戏服 gRPC 连接", "addr", gameRpcAddr)
-	gateway.InitGameRpcClient(gameRpcAddr)
+	gwRpc.InitGameRpcClient(gameRpcAddr)
 
 	// 5. 启动 pprof 性能分析与健康检查（独立端口）
 	if config.GlobalCfg.Gateway.PprofEnabled {
@@ -54,7 +55,7 @@ func main() {
 	logger.Info("网关 gRPC 推送服务启动", "grpc_addr", grpcAddr)
 
 	grpcServer := grpc.NewServer()
-	gatewayRpcServer := gateway.NewGatewayRpcServer()
+	gatewayRpcServer := gwRpc.NewGatewayRpcServer()
 	pb.RegisterGatewayServiceServer(grpcServer, gatewayRpcServer)
 
 	lis, err := net.Listen("tcp", grpcAddr)

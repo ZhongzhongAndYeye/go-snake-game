@@ -1,5 +1,5 @@
 // 游戏服 gRPC 服务端实现
-// 包含匹配、取消匹配、房间信息查询三个 RPC 接口
+// 包含匹配、取消匹配、房间信息查询等 RPC 接口
 
 package game
 
@@ -7,34 +7,38 @@ import (
 	"context"
 	"errors"
 
+	"go-snake-game/internal/game/engine"
+	"go-snake-game/internal/game/match"
+	"go-snake-game/internal/game/room"
+	"go-snake-game/internal/game/rpc"
 	"go-snake-game/pkg/errcode"
 	"go-snake-game/pkg/logger"
 	pb "go-snake-game/pkg/proto/rpc"
 	"go-snake-game/pkg/utils"
 )
 
-// 业务错误码，统一封装响应中的 code 字段
-// 引用 pkg/errcode 全局常量，按业务分号段：
-//   - 通用：errcode.OK(0)、errcode.ErrParam(10001)、errcode.ErrSystem(10002)
-//   - 游戏：errcode.ErrMatchFailed(30001)、errcode.ErrRoomNotExist(30002) 等
-const ()
-
 // GameServerImpl 游戏 gRPC 服务端实现。
 // 嵌入 UnimplementedGameServiceServer 保证向前兼容，
 // 持有匹配管理器和房间管理器实例完成实际业务逻辑。
 type GameServerImpl struct {
 	pb.UnimplementedGameServiceServer
-	matchManager *MatchManager
-	roomManager  *RoomManager
+	matchManager *match.MatchManager
+	roomManager  *room.RoomManager
 }
 
 // NewGameServer 创建游戏 gRPC 服务端实例。
 // 注入匹配管理器与房间管理器全局单例。
 func NewGameServer() *GameServerImpl {
 	return &GameServerImpl{
-		matchManager: GetMatchManager(),
-		roomManager:  GetRoomManager(),
+		matchManager: match.GetMatchManager(),
+		roomManager:  room.GetRoomManager(),
 	}
+}
+
+// InitGatewayRpcClient 初始化网关 gRPC 客户端（代理到 rpc 子包）。
+// 保留此函数避免 cmd/game 直接依赖 rpc 子包。
+func InitGatewayRpcClient(addr string) {
+	rpc.InitGatewayRpcClient(addr)
 }
 
 // StartMatch 发起匹配。
@@ -60,16 +64,16 @@ func (s *GameServerImpl) StartMatch(ctx context.Context, req *pb.StartMatchReque
 
 	if isMatched {
 		// 匹配成功，创建房间并将两名玩家加入房间
-		room := s.roomManager.CreateRoom(roomID)
-		_ = room.AddPlayer(waitingPlayerID, waitingNickname)
-		_ = room.AddPlayer(playerID, nickname)
+		rm := s.roomManager.CreateRoom(roomID)
+		_ = rm.AddPlayer(waitingPlayerID, waitingNickname)
+		_ = rm.AddPlayer(playerID, nickname)
 
 		// 绑定玩家到房间
 		s.roomManager.BindPlayerToRoom(waitingPlayerID, roomID)
 		s.roomManager.BindPlayerToRoom(playerID, roomID)
 
 		// 房间人满（2 人），自动开始游戏
-		if err := room.StartGame(); err != nil {
+		if err := rm.StartGame(); err != nil {
 			traceLog.Warn("gRPC StartMatch 开始游戏失败", "room_id", roomID, "error", err.Error())
 		}
 
@@ -108,7 +112,7 @@ func (s *GameServerImpl) CancelMatch(ctx context.Context, req *pb.CancelMatchReq
 	// 调用匹配管理器移除玩家
 	err := s.matchManager.RemoveFromMatchQueue(playerID)
 	if err != nil {
-		if errors.Is(err, ErrPlayerNotInQueue) {
+		if errors.Is(err, match.ErrPlayerNotInQueue) {
 			traceLog.Warn("gRPC CancelMatch 玩家不在队列", "player_id", playerID)
 			return &pb.CancelMatchResponse{Code: errcode.ErrMatchFailed, Msg: "您不在匹配队列中"}, nil
 		}
@@ -134,18 +138,18 @@ func (s *GameServerImpl) GetRoomInfo(ctx context.Context, req *pb.GetRoomInfoReq
 	}
 
 	// 查询房间管理器
-	room, ok := s.roomManager.GetRoom(roomID)
+	rm, ok := s.roomManager.GetRoom(roomID)
 	if !ok {
 		traceLog.Warn("gRPC GetRoomInfo 房间不存在", "room_id", roomID)
 		return &pb.GetRoomInfoResponse{Code: errcode.ErrRoomNotExist, Msg: "房间不存在"}, nil
 	}
 
-	room.mu.Lock()
-	defer room.mu.Unlock()
+	rm.Lock()
+	defer rm.Unlock()
 
 	// 转换玩家列表
-	players := make([]*pb.PlayerInfo, 0, len(room.Players))
-	for _, p := range room.Players {
+	players := make([]*pb.PlayerInfo, 0, len(rm.Players))
+	for _, p := range rm.Players {
 		players = append(players, &pb.PlayerInfo{
 			PlayerId: p.PlayerID,
 			Nickname: p.Nickname,
@@ -154,8 +158,8 @@ func (s *GameServerImpl) GetRoomInfo(ctx context.Context, req *pb.GetRoomInfoReq
 	}
 
 	// 转换蛇状态
-	snakes := make([]*pb.SnakeState, 0, len(room.Snakes))
-	for _, snake := range room.Snakes {
+	snakes := make([]*pb.SnakeState, 0, len(rm.Snakes))
+	for _, snake := range rm.Snakes {
 		body := make([]*pb.Point, 0, len(snake.Body))
 		for _, pt := range snake.Body {
 			body = append(body, &pb.Point{X: int32(pt.X), Y: int32(pt.Y)})
@@ -171,23 +175,23 @@ func (s *GameServerImpl) GetRoomInfo(ctx context.Context, req *pb.GetRoomInfoReq
 
 	// 转换食物状态
 	var food *pb.FoodState
-	if room.CurrentFood != nil {
-		rf := room.CurrentFood
+	if rm.CurrentFood != nil {
+		rf := rm.CurrentFood
 		food = &pb.FoodState{
 			Position: &pb.Point{X: int32(rf.Position.X), Y: int32(rf.Position.Y)},
 			Score:    int32(rf.ScoreValue),
 		}
 	}
 
-	traceLog.Info("gRPC GetRoomInfo 成功", "room_id", roomID, "player_count", len(players), "game_status", room.GameStatus)
+	traceLog.Info("gRPC GetRoomInfo 成功", "room_id", roomID, "player_count", len(players), "game_status", rm.GameStatus)
 	return &pb.GetRoomInfoResponse{
 		Code:       errcode.OK,
 		Msg:        "获取房间信息成功",
 		RoomId:     roomID,
 		Players:    players,
-		Status:     room.Status,
-		GameStatus: int32(room.GameStatus),
-		Frame:      room.Frame,
+		Status:     rm.Status,
+		GameStatus: int32(rm.GameStatus),
+		Frame:      rm.Frame,
 		Snakes:     snakes,
 		Food:       food,
 	}, nil
@@ -209,7 +213,7 @@ func (s *GameServerImpl) PlayerOperation(ctx context.Context, req *pb.PlayerOper
 	}
 
 	// 方向合法性校验
-	if direction < DirUp || direction > DirRight {
+	if direction < engine.DirUp || direction > engine.DirRight {
 		traceLog.Warn("gRPC PlayerOperation 方向非法", "player_id", playerID, "direction", direction)
 		return &pb.PlayerOperationResponse{Code: errcode.ErrParam, Msg: "方向参数无效"}, nil
 	}
@@ -225,14 +229,14 @@ func (s *GameServerImpl) PlayerOperation(ctx context.Context, req *pb.PlayerOper
 	}
 
 	// 查找房间
-	room, ok := s.roomManager.GetRoom(roomID)
+	rm, ok := s.roomManager.GetRoom(roomID)
 	if !ok {
 		traceLog.Warn("gRPC PlayerOperation 房间不存在", "room_id", roomID)
 		return &pb.PlayerOperationResponse{Code: errcode.ErrRoomNotExist, Msg: "房间不存在"}, nil
 	}
 
 	// 调用房间的 HandlePlayerOperation 处理方向操作
-	room.HandlePlayerOperation(playerID, direction)
+	rm.HandlePlayerOperation(playerID, direction)
 
 	traceLog.Info("gRPC PlayerOperation 成功", "player_id", playerID, "room_id", roomID, "direction", direction)
 	return &pb.PlayerOperationResponse{Code: errcode.OK, Msg: "操作成功"}, nil
@@ -264,7 +268,7 @@ func (s *GameServerImpl) PlayerOffline(ctx context.Context, req *pb.PlayerOfflin
 			// 玩家不在任何房间，可能正在匹配队列中，尝试从匹配队列移除
 			traceLog.Info("gRPC PlayerOffline 玩家不在房间，尝试从匹配队列移除", "player_id", playerID)
 			if err := s.matchManager.RemoveFromMatchQueue(playerID); err != nil {
-				if errors.Is(err, ErrPlayerNotInQueue) {
+				if errors.Is(err, match.ErrPlayerNotInQueue) {
 					traceLog.Info("gRPC PlayerOffline 玩家既不在房间也不在匹配队列", "player_id", playerID)
 					return &pb.PlayerOfflineResponse{Code: errcode.OK, Msg: "玩家不在任何房间或队列中"}, nil
 				}
@@ -277,17 +281,17 @@ func (s *GameServerImpl) PlayerOffline(ctx context.Context, req *pb.PlayerOfflin
 	}
 
 	// 查找房间
-	room, ok := s.roomManager.GetRoom(roomID)
+	rm, ok := s.roomManager.GetRoom(roomID)
 	if !ok {
 		traceLog.Warn("gRPC PlayerOffline 房间不存在", "room_id", roomID)
 		return &pb.PlayerOfflineResponse{Code: errcode.ErrRoomNotExist, Msg: "房间不存在"}, nil
 	}
 
 	// 处理房间内的离线逻辑
-	room.mu.Lock()
+	rm.Lock()
 
 	// 标记玩家离线
-	for _, p := range room.Players {
+	for _, p := range rm.Players {
 		if p.PlayerID == playerID {
 			p.IsOnline = false
 			break
@@ -295,30 +299,30 @@ func (s *GameServerImpl) PlayerOffline(ctx context.Context, req *pb.PlayerOfflin
 	}
 
 	// 如果游戏正在进行，标记蛇死亡并触发结束判定
-	if room.GameStatus == GameStatusPlaying {
-		if snake, ok := room.Snakes[playerID]; ok && snake.IsAlive {
+	if rm.GameStatus == engine.GameStatusPlaying {
+		if snake, ok := rm.Snakes[playerID]; ok && snake.IsAlive {
 			snake.Die()
 			traceLog.Info("玩家离线，标记蛇死亡", "player_id", playerID, "room_id", roomID)
 
 			// 检查是否所有存活蛇都已死亡（只剩离线玩家死亡或全部死亡）
 			aliveCount := 0
-			for _, s := range room.Snakes {
+			for _, s := range rm.Snakes {
 				if s.IsAlive {
 					aliveCount++
 				}
 			}
 			if aliveCount <= 1 {
 				traceLog.Info("玩家离线触发游戏结束判定", "room_id", roomID, "alive_count", aliveCount)
-				room.mu.Unlock()
+				rm.Unlock()
 				// 异步结束游戏，避免死锁
-				room.EndGame()
+				rm.EndGame()
 				traceLog.Info("gRPC PlayerOffline 成功，已触发游戏结束", "player_id", playerID, "room_id", roomID)
 				return &pb.PlayerOfflineResponse{Code: errcode.OK, Msg: "玩家离线，游戏已结束"}, nil
 			}
 		}
 	}
 
-	room.mu.Unlock()
+	rm.Unlock()
 
 	traceLog.Info("gRPC PlayerOffline 成功", "player_id", playerID, "room_id", roomID)
 	return &pb.PlayerOfflineResponse{Code: errcode.OK, Msg: "玩家离线处理成功"}, nil

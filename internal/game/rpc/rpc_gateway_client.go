@@ -1,7 +1,7 @@
 // 网关 gRPC 客户端封装
 // 游戏服通过此客户端调用网关推送服务，向房间广播或单推消息
 
-package game
+package rpc
 
 import (
 	"context"

@@ -1,4 +1,4 @@
-package game
+package engine
 
 import (
 	"math/rand"
@@ -41,11 +41,11 @@ type Snake struct {
 	Direction  int       // 当前移动方向，取值为 DirUp / DirDown / DirLeft / DirRight
 	Score      int       // 当前得分，每吃到一个食物增加
 	IsAlive    bool      // 是否存活，蛇撞墙或撞自身后置为 false
-	lastOpTime time.Time // 上次操作时间，用于频率限制
+	LastOpTime time.Time // 上次操作时间，用于频率限制
 }
 
 // 操作频率限制，每 100ms 最多接受 1 次方向操作。
-const opRateLimitInterval = 100 * time.Millisecond
+const OpRateLimitInterval = 100 * time.Millisecond
 
 // Food 表示地图上的一个食物
 type Food struct {
@@ -164,6 +164,19 @@ func CheckSelfCollision(snake *Snake) bool {
 	head := snake.Body[0]
 	for i := 1; i < len(snake.Body); i++ {
 		if head.X == snake.Body[i].X && head.Y == snake.Body[i].Y {
+			return true
+		}
+	}
+	return false
+}
+
+// CheckInterSnakeCollision 检测蛇头是否撞到对方蛇的身体。
+// 房间内只有两条蛇，直接比较蛇头与对方蛇身每一节是否重叠即可。
+// 返回 true 表示撞到对方，该蛇应死亡。
+func CheckInterSnakeCollision(snake *Snake, opponent *Snake) bool {
+	head := snake.Body[0]
+	for _, body := range opponent.Body {
+		if head.X == body.X && head.Y == body.Y {
 			return true
 		}
 	}

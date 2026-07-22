@@ -1,4 +1,4 @@
-package game
+package engine
 
 import (
 	"testing"
@@ -154,6 +154,53 @@ func TestCheckSelfCollision_Collision(t *testing.T) {
 	}
 	if !CheckSelfCollision(s) {
 		t.Errorf("蛇头与身体重叠应检测为自撞")
+	}
+}
+
+// ---------- 蛇间碰撞检测 ----------
+
+func TestCheckInterSnakeCollision_NoCollision(t *testing.T) {
+	s1 := NewSnake(1, "p1")
+	s2 := NewSnake(2, "p2")
+	// 两条蛇出生在不同位置，不应碰撞
+	if CheckInterSnakeCollision(s1, s2) {
+		t.Errorf("不同出生位置的蛇不应碰撞")
+	}
+}
+
+func TestCheckInterSnakeCollision_HeadOnBody(t *testing.T) {
+	s1 := &Snake{
+		PlayerID: 1,
+		Body:     []Point{{X: 5, Y: 5}, {X: 4, Y: 5}, {X: 3, Y: 5}},
+		IsAlive:  true,
+	}
+	s2 := &Snake{
+		PlayerID: 2,
+		Body:     []Point{{X: 10, Y: 10}, {X: 5, Y: 5}, {X: 9, Y: 10}}, // s2 的身体在 (5,5) 与 s1 蛇头重合
+		IsAlive:  true,
+	}
+	if !CheckInterSnakeCollision(s1, s2) {
+		t.Errorf("s1 蛇头撞到 s2 身体应返回 true")
+	}
+}
+
+func TestCheckInterSnakeCollision_HeadToHead(t *testing.T) {
+	s1 := &Snake{
+		PlayerID: 1,
+		Body:     []Point{{X: 5, Y: 5}, {X: 4, Y: 5}, {X: 3, Y: 5}},
+		IsAlive:  true,
+	}
+	s2 := &Snake{
+		PlayerID: 2,
+		Body:     []Point{{X: 5, Y: 5}, {X: 6, Y: 5}, {X: 7, Y: 5}}, // 蛇头也在 (5,5)
+		IsAlive:  true,
+	}
+	// 头对头碰撞，双方都应检测到
+	if !CheckInterSnakeCollision(s1, s2) {
+		t.Errorf("s1 与 s2 头对头，s1 应检测到碰撞")
+	}
+	if !CheckInterSnakeCollision(s2, s1) {
+		t.Errorf("s1 与 s2 头对头，s2 应检测到碰撞")
 	}
 }
 

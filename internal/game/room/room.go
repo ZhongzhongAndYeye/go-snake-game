@@ -1,12 +1,14 @@
 // 游戏房间定义 — 房间状态、玩家信息、房间操作
 
-package game
+package room
 
 import (
 	"errors"
-	"go-snake-game/pkg/logger"
 	"sync"
 	"time"
+
+	"go-snake-game/internal/game/engine"
+	"go-snake-game/pkg/logger"
 )
 
 // 房间状态枚举
@@ -47,14 +49,14 @@ type Room struct {
 	EndTime    time.Time     // 游戏结束时间（零值表示未结束），用于定时清理判断
 
 	// 游戏状态（仅在 Status == Playing 时有效）
-	GameStatus  int               // 游戏阶段：1 未开始，2 进行中，3 暂停，4 已结束
-	Frame       int64             // 当前帧序号，从 1 开始递增
-	Snakes      map[uint64]*Snake // 房间内所有玩家的蛇实例，key 为 playerID
-	CurrentFood *Food             // 当前地图上的食物
-	MapWidth    int               // 地图宽度
-	MapHeight   int               // 地图高度
-	ticker      *time.Ticker      // 游戏帧定时器，10 FPS（100ms 一帧）
-	stopCh      chan struct{}     // 停止信号通道，关闭后游戏主循环退出
+	GameStatus  int                      // 游戏阶段：1 未开始，2 进行中，3 暂停，4 已结束
+	Frame       int64                    // 当前帧序号，从 1 开始递增
+	Snakes      map[uint64]*engine.Snake // 房间内所有玩家的蛇实例，key 为 playerID
+	CurrentFood *engine.Food             // 当前地图上的食物
+	MapWidth    int                      // 地图宽度
+	MapHeight   int                      // 地图高度
+	ticker      *time.Ticker             // 游戏帧定时器，10 FPS（100ms 一帧）
+	stopCh      chan struct{}            // 停止信号通道，关闭后游戏主循环退出
 }
 
 // NewRoom 创建新房间。
@@ -64,10 +66,10 @@ func NewRoom(roomID string) *Room {
 		Status:     RoomStatusWaiting,
 		Players:    make([]*PlayerInfo, 0, maxRoomPlayers),
 		CreateTime: time.Now(),
-		GameStatus: GameStatusNotStarted,
-		MapWidth:   DefaultMapWidth,
-		MapHeight:  DefaultMapHeight,
-		Snakes:     make(map[uint64]*Snake),
+		GameStatus: engine.GameStatusNotStarted,
+		MapWidth:   engine.DefaultMapWidth,
+		MapHeight:  engine.DefaultMapHeight,
+		Snakes:     make(map[uint64]*engine.Snake),
 	}
 }
 
@@ -177,4 +179,15 @@ func (r *Room) Cleanup() {
 	r.Snakes = nil
 	r.CurrentFood = nil
 	logger.Info("房间资源清理完成", "room_id", r.RoomID)
+}
+
+// Lock 加锁，供外部包在需要原子读取多个房间字段时使用。
+// 调用方必须随后调用 Unlock 释放锁。
+func (r *Room) Lock() {
+	r.mu.Lock()
+}
+
+// Unlock 释放锁，与 Lock 配对使用。
+func (r *Room) Unlock() {
+	r.mu.Unlock()
 }

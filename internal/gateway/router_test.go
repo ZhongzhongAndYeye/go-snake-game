@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"go-snake-game/internal/gateway/handler"
 	"go-snake-game/pkg/network"
 
 	"github.com/gorilla/websocket"
@@ -56,12 +57,12 @@ func TestRouter_RegisterAndHandle(t *testing.T) {
 	router := NewRouter()
 	var (
 		handlerCalled bool
-		gotSession    *Session
+		gotSession    handler.Session
 		gotPacket     *network.Packet
 	)
 
 	// 注册一个 Handler
-	router.Register(1001, func(s *Session, pkt *network.Packet) {
+	router.Register(1001, func(s handler.Session, pkt *network.Packet) {
 		handlerCalled = true
 		gotSession = s
 		gotPacket = pkt
@@ -116,8 +117,8 @@ func TestRouter_Middleware(t *testing.T) {
 	var executionOrder []string
 
 	// 添加自定义中间件：记录执行顺序
-	router.Use(func(next HandlerFunc) HandlerFunc {
-		return func(s *Session, pkt *network.Packet) {
+	router.Use(func(next handler.HandlerFunc) handler.HandlerFunc {
+		return func(s handler.Session, pkt *network.Packet) {
 			executionOrder = append(executionOrder, "middleware_before")
 			next(s, pkt)
 			executionOrder = append(executionOrder, "middleware_after")
@@ -125,7 +126,7 @@ func TestRouter_Middleware(t *testing.T) {
 	})
 
 	// 注册业务 Handler
-	router.Register(2001, func(s *Session, pkt *network.Packet) {
+	router.Register(2001, func(s handler.Session, pkt *network.Packet) {
 		executionOrder = append(executionOrder, "handler")
 	})
 
@@ -158,8 +159,8 @@ func TestRouter_MiddlewareChain(t *testing.T) {
 	var executionOrder []string
 
 	// 第一个中间件（最外层）
-	router.Use(func(next HandlerFunc) HandlerFunc {
-		return func(s *Session, pkt *network.Packet) {
+	router.Use(func(next handler.HandlerFunc) handler.HandlerFunc {
+		return func(s handler.Session, pkt *network.Packet) {
 			executionOrder = append(executionOrder, "mw1_before")
 			next(s, pkt)
 			executionOrder = append(executionOrder, "mw1_after")
@@ -167,15 +168,15 @@ func TestRouter_MiddlewareChain(t *testing.T) {
 	})
 
 	// 第二个中间件（内层，紧贴业务 Handler）
-	router.Use(func(next HandlerFunc) HandlerFunc {
-		return func(s *Session, pkt *network.Packet) {
+	router.Use(func(next handler.HandlerFunc) handler.HandlerFunc {
+		return func(s handler.Session, pkt *network.Packet) {
 			executionOrder = append(executionOrder, "mw2_before")
 			next(s, pkt)
 			executionOrder = append(executionOrder, "mw2_after")
 		}
 	})
 
-	router.Register(3001, func(s *Session, pkt *network.Packet) {
+	router.Register(3001, func(s handler.Session, pkt *network.Packet) {
 		executionOrder = append(executionOrder, "handler")
 	})
 

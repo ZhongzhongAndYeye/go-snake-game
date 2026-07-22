@@ -6,6 +6,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"go-snake-game/internal/gateway/rpc"
 	"go-snake-game/pkg/logger"
 	"go-snake-game/pkg/network"
 	"go-snake-game/pkg/utils"
@@ -117,7 +118,7 @@ func (m *SessionManager) RemoveSession(sessionID uint64) {
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			md := metadata.Pairs(utils.TraceIDKey, traceID)
 			ctx = metadata.NewOutgoingContext(ctx, md)
-			_, _ = GlobalGameClient.PlayerOffline(ctx, s.playerID, s.RoomID)
+			_, _ = rpc.GlobalGameClient.PlayerOffline(ctx, s.playerID, s.RoomID)
 			cancel()
 		}
 

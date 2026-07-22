@@ -1,7 +1,8 @@
 // 网关 gRPC 推送服务
 // 游戏服可通过 gRPC 调用网关，向指定房间或单个玩家主动推送消息
+// 使用函数变量注入模式避免循环依赖（rpc 包不导入 gateway 或 handler）
 
-package gateway
+package rpc
 
 import (
 	"context"
@@ -11,11 +12,16 @@ import (
 	pb "go-snake-game/pkg/proto/rpc"
 )
 
-// 【网关 gRPC 推送服务实现】
+// 以下函数变量由 gateway 包在初始化时注入，用于桥接 rpc 包与 gateway 包
+var (
+	// BroadcastToRoom 向指定房间广播消息，由 gateway 包注入
+	BroadcastToRoom func(roomID string, pkt *network.Packet) int
+
+	// SendToPlayer 向指定玩家发送消息，由 gateway 包注入
+	SendToPlayer func(playerID uint64, pkt *network.Packet) bool
+)
 
 // GatewayRpcServer 网关 gRPC 推送服务实现。
-// 嵌入 UnimplementedGatewayServiceServer 保证向前兼容，
-// 持有 SessionManager 全局单例完成消息推送。
 type GatewayRpcServer struct {
 	pb.UnimplementedGatewayServiceServer
 }
@@ -26,7 +32,6 @@ func NewGatewayRpcServer() *GatewayRpcServer {
 }
 
 // PushToRoom 向指定房间所有玩家广播消息。
-// 游戏服调用此接口，将消息通过网关的 WebSocket 连接推送给房间内所有玩家。
 func (s *GatewayRpcServer) PushToRoom(ctx context.Context, req *pb.PushToRoomRequest) (*pb.PushToRoomResponse, error) {
 	roomID := req.GetRoomId()
 	msgID := req.GetMsgId()
@@ -34,36 +39,29 @@ func (s *GatewayRpcServer) PushToRoom(ctx context.Context, req *pb.PushToRoomReq
 
 	logger.Info("gRPC PushToRoom 请求", "room_id", roomID, "msg_id", msgID)
 
-	// 参数校验
 	if roomID == "" {
-		logger.Warn("gRPC PushToRoom 参数无效", "room_id", roomID)
 		return &pb.PushToRoomResponse{Code: 1, Msg: "房间 ID 不能为空"}, nil
 	}
 	if msgID == 0 {
-		logger.Warn("gRPC PushToRoom 参数无效", "msg_id", msgID)
 		return &pb.PushToRoomResponse{Code: 1, Msg: "消息 ID 不能为空"}, nil
 	}
 
-	// 组装自定义二进制 Packet
 	pkt := &network.Packet{
 		MsgID: uint16(msgID),
-		SeqID: 0, // 推送消息不需要序列号
+		SeqID: 0,
 		Body:  body,
 	}
 
-	// 调用 SessionManager 的 BroadcastToRoom 广播
-	count := GetManager().BroadcastToRoom(roomID, pkt)
+	if BroadcastToRoom == nil {
+		return &pb.PushToRoomResponse{Code: 1, Msg: "推送服务未初始化"}, nil
+	}
+	count := BroadcastToRoom(roomID, pkt)
 
 	logger.Info("gRPC PushToRoom 成功", "room_id", roomID, "msg_id", msgID, "count", count)
-	return &pb.PushToRoomResponse{
-		Code:  0,
-		Msg:   "推送成功",
-		Count: int32(count),
-	}, nil
+	return &pb.PushToRoomResponse{Code: 0, Msg: "推送成功", Count: int32(count)}, nil
 }
 
 // PushToPlayer 向指定单个玩家发送消息。
-// 游戏服调用此接口，将消息通过网关的 WebSocket 连接推送给指定玩家。
 func (s *GatewayRpcServer) PushToPlayer(ctx context.Context, req *pb.PushToPlayerRequest) (*pb.PushToPlayerResponse, error) {
 	playerID := req.GetPlayerId()
 	msgID := req.GetMsgId()
@@ -71,30 +69,25 @@ func (s *GatewayRpcServer) PushToPlayer(ctx context.Context, req *pb.PushToPlaye
 
 	logger.Info("gRPC PushToPlayer 请求", "player_id", playerID, "msg_id", msgID)
 
-	// 参数校验
 	if playerID == 0 {
-		logger.Warn("gRPC PushToPlayer 参数无效", "player_id", playerID)
 		return &pb.PushToPlayerResponse{Code: 1, Msg: "玩家 ID 不能为空"}, nil
 	}
 	if msgID == 0 {
-		logger.Warn("gRPC PushToPlayer 参数无效", "msg_id", msgID)
 		return &pb.PushToPlayerResponse{Code: 1, Msg: "消息 ID 不能为空"}, nil
 	}
 
-	// 查询玩家会话
-	session := GetManager().GetSessionByPlayerID(playerID)
-	if session == nil {
-		logger.Warn("gRPC PushToPlayer 玩家不在线", "player_id", playerID)
-		return &pb.PushToPlayerResponse{Code: 2, Msg: "玩家不在线"}, nil
-	}
-
-	// 组装自定义二进制 Packet 并发送
 	pkt := &network.Packet{
 		MsgID: uint16(msgID),
-		SeqID: 0, // 推送消息不需要序列号
+		SeqID: 0,
 		Body:  body,
 	}
-	session.Send(pkt)
+
+	if SendToPlayer == nil {
+		return &pb.PushToPlayerResponse{Code: 2, Msg: "推送服务未初始化"}, nil
+	}
+	if !SendToPlayer(playerID, pkt) {
+		return &pb.PushToPlayerResponse{Code: 2, Msg: "玩家不在线"}, nil
+	}
 
 	logger.Info("gRPC PushToPlayer 成功", "player_id", playerID, "msg_id", msgID)
 	return &pb.PushToPlayerResponse{Code: 0, Msg: "推送成功"}, nil

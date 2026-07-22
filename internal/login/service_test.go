@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"go-snake-game/internal/login/service"
 	"go-snake-game/internal/model"
 	"go-snake-game/pkg/config"
 	"go-snake-game/pkg/db"
@@ -73,7 +74,7 @@ func TestRegister(t *testing.T) {
 	password := "testPass123"
 	defer cleanupPlayer(t, username)
 
-	svc := NewLoginService()
+	svc := service.NewLoginService()
 	playerID, err := svc.Register(username, password)
 	if err != nil {
 		t.Fatalf("Register 失败: %v", err)
@@ -92,7 +93,7 @@ func TestRegisterDuplicate(t *testing.T) {
 	password := "testPass123"
 	defer cleanupPlayer(t, username)
 
-	svc := NewLoginService()
+	svc := service.NewLoginService()
 
 	// 第一次注册应成功
 	_, err := svc.Register(username, password)
@@ -102,7 +103,7 @@ func TestRegisterDuplicate(t *testing.T) {
 
 	// 第二次注册相同用户名应失败
 	_, err = svc.Register(username, "otherPass456")
-	if err != ErrUsernameExists {
+	if err != service.ErrUsernameExists {
 		t.Errorf("重复注册应返回 ErrUsernameExists，实际: %v", err)
 	}
 }
@@ -110,7 +111,7 @@ func TestRegisterDuplicate(t *testing.T) {
 // TestRegisterInvalidParams 测试注册参数校验。
 func TestRegisterInvalidParams(t *testing.T) {
 	setup(t)
-	svc := NewLoginService()
+	svc := service.NewLoginService()
 
 	tests := []struct {
 		name     string
@@ -118,12 +119,12 @@ func TestRegisterInvalidParams(t *testing.T) {
 		password string
 		wantErr  error
 	}{
-		{"空用户名", "", "123456", ErrUsernameEmpty},
-		{"用户名太短", "ab", "123456", ErrUsernameTooShort},
-		{"用户名太长", string(make([]byte, 33)), "123456", ErrUsernameTooLong},
-		{"空密码", "testuser", "", ErrPasswordEmpty},
-		{"密码太短", "testuser", "12345", ErrPasswordTooShort},
-		{"密码太长", "testuser", string(make([]byte, 33)), ErrPasswordTooLong},
+		{"空用户名", "", "123456", service.ErrUsernameEmpty},
+		{"用户名太短", "ab", "123456", service.ErrUsernameTooShort},
+		{"用户名太长", string(make([]byte, 33)), "123456", service.ErrUsernameTooLong},
+		{"空密码", "testuser", "", service.ErrPasswordEmpty},
+		{"密码太短", "testuser", "12345", service.ErrPasswordTooShort},
+		{"密码太长", "testuser", string(make([]byte, 33)), service.ErrPasswordTooLong},
 	}
 
 	for _, tt := range tests {
@@ -144,7 +145,7 @@ func TestLogin(t *testing.T) {
 	password := "loginPass123"
 	defer cleanupPlayer(t, username)
 
-	svc := NewLoginService()
+	svc := service.NewLoginService()
 
 	// 先注册
 	_, err := svc.Register(username, password)
@@ -178,7 +179,7 @@ func TestLoginPasswordIncorrect(t *testing.T) {
 	wrongPassword := "wrongPass456"
 	defer cleanupPlayer(t, username)
 
-	svc := NewLoginService()
+	svc := service.NewLoginService()
 
 	// 先注册
 	_, err := svc.Register(username, password)
@@ -188,7 +189,7 @@ func TestLoginPasswordIncorrect(t *testing.T) {
 
 	// 使用错误密码登录
 	_, _, _, err = svc.Login(username, wrongPassword)
-	if err != ErrPasswordIncorrect {
+	if err != service.ErrPasswordIncorrect {
 		t.Errorf("错误密码登录应返回 ErrPasswordIncorrect，实际: %v", err)
 	}
 }
@@ -196,10 +197,10 @@ func TestLoginPasswordIncorrect(t *testing.T) {
 // TestLoginAccountNotFound 测试不存在的账号登录。
 func TestLoginAccountNotFound(t *testing.T) {
 	setup(t)
-	svc := NewLoginService()
+	svc := service.NewLoginService()
 
 	_, _, _, err := svc.Login("not_exist_user_xxx", "anyPass123")
-	if err != ErrAccountNotFound {
+	if err != service.ErrAccountNotFound {
 		t.Errorf("不存在的账号登录应返回 ErrAccountNotFound，实际: %v", err)
 	}
 }
@@ -212,7 +213,7 @@ func TestVerifyToken(t *testing.T) {
 	password := "verifyPass123"
 	defer cleanupPlayer(t, username)
 
-	svc := NewLoginService()
+	svc := service.NewLoginService()
 
 	// 先注册
 	_, err := svc.Register(username, password)
@@ -240,7 +241,7 @@ func TestVerifyToken(t *testing.T) {
 // TestVerifyTokenInvalid 测试无效 Token 校验。
 func TestVerifyTokenInvalid(t *testing.T) {
 	setup(t)
-	svc := NewLoginService()
+	svc := service.NewLoginService()
 
 	// 使用无效 Token
 	_, err := svc.VerifyToken("invalid_token_xxx")
@@ -257,7 +258,7 @@ func TestLoginAndVerifyFlow(t *testing.T) {
 	password := "flowPass123"
 	defer cleanupPlayer(t, username)
 
-	svc := NewLoginService()
+	svc := service.NewLoginService()
 
 	// 1. 注册
 	playerID, err := svc.Register(username, password)
@@ -288,7 +289,7 @@ func TestLoginAndVerifyFlow(t *testing.T) {
 
 	// 4. 使用错误密码登录
 	_, _, _, err = svc.Login(username, "wrongPass")
-	if err != ErrPasswordIncorrect {
+	if err != service.ErrPasswordIncorrect {
 		t.Errorf("错误密码应返回 ErrPasswordIncorrect，实际: %v", err)
 	}
 	t.Log("4. 错误密码校验通过")

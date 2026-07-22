@@ -1,6 +1,6 @@
 // 房间管理器 — 全局单例，管理所有游戏房间
 
-package game
+package room
 
 import (
 	"sync"
@@ -12,8 +12,8 @@ import (
 // RoomManager 房间管理器，用 sync.Map 存储所有房间，key 为 roomID。
 // sync.Map 适合读多写少的场景，且无需额外加锁，并发安全。
 type RoomManager struct {
-	rooms        sync.Map  // key: roomID, value: *Room
-	playerToRoom sync.Map  // key: playerID (uint64), value: roomID (string)
+	rooms        sync.Map  // key: roomID, value: *Room ==> 通过房间号找到房间
+	playerToRoom sync.Map  // key: playerID (uint64), value: roomID (string) ==> 通过玩家找到房间号
 	cleanupOnce  sync.Once // 确保清理协程只启动一次
 }
 

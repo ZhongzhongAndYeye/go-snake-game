@@ -7,10 +7,14 @@ import (
 	"sync"
 	"time"
 
+	"go-snake-game/internal/gateway/handler"
+	"go-snake-game/pkg/errcode"
 	"go-snake-game/pkg/logger"
 	"go-snake-game/pkg/network"
+	"go-snake-game/pkg/proto/msg"
 
 	"github.com/gorilla/websocket"
+	"google.golang.org/protobuf/proto"
 )
 
 // 【会话结构】
@@ -60,7 +64,7 @@ func NewSession(conn *websocket.Conn, router *Router) *Session {
 func (s *Session) Start() {
 	logger.Info("会话启动",
 		"remote", s.conn.RemoteAddr(),
-		"session_id", s.logID(),
+		"session_id", s.LogID(),
 	)
 
 	go s.readLoop()  // 启动读 goroutine
@@ -74,7 +78,7 @@ func (s *Session) Stop() {
 	s.closeOnce.Do(func() {
 		logger.Info("会话关闭",
 			"player_id", s.playerID,
-			"session_id", s.logID(),
+			"session_id", s.LogID(),
 		)
 
 		// 1. 标记离线
@@ -101,7 +105,7 @@ func (s *Session) Stop() {
 // readLoop 读 goroutine：循环从 WebSocket 读取消息，通过路由器分发处理。
 func (s *Session) readLoop() {
 	defer func() {
-		logger.Debug("读 goroutine 退出", "session_id", s.logID())
+		logger.Debug("读 goroutine 退出", "session_id", s.LogID())
 	}()
 
 	for {
@@ -110,7 +114,7 @@ func (s *Session) readLoop() {
 		if err != nil {
 			// 连接关闭或读取异常，停止会话
 			logger.Error("读取消息失败",
-				"session_id", s.logID(),
+				"session_id", s.LogID(),
 				"error", err.Error(),
 			)
 			s.Stop()
@@ -124,7 +128,7 @@ func (s *Session) readLoop() {
 		pkt, err := network.Decode(reader)
 		if err != nil {
 			logger.Error("解码消息失败",
-				"session_id", s.logID(),
+				"session_id", s.LogID(),
 				"error", err.Error(),
 			)
 			continue
@@ -140,15 +144,15 @@ func (s *Session) readLoop() {
 			if err != nil {
 				// 路由失败（找不到消息 ID），自动返回错误响应给客户端
 				logger.Warn("路由消息失败",
-					"session_id", s.logID(),
+					"session_id", s.LogID(),
 					"msg_id", pkt.MsgID,
 					"error", err.Error(),
 				)
-				s.SendError(ErrCodeMsgNotFound, "未知消息类型")
+				s.SendError(handler.ErrCodeMsgNotFound, "未知消息类型")
 			}
 		} else {
 			logger.Warn("路由器未初始化，丢弃消息",
-				"session_id", s.logID(),
+				"session_id", s.LogID(),
 				"msg_id", pkt.MsgID,
 			)
 		}
@@ -166,7 +170,7 @@ func (s *Session) readLoop() {
 // writeLoop 写 goroutine：循环从 writeCh 取消息，写入 WebSocket 连接。
 func (s *Session) writeLoop() {
 	defer func() {
-		logger.Debug("写 goroutine 退出", "session_id", s.logID())
+		logger.Debug("写 goroutine 退出", "session_id", s.LogID())
 	}()
 
 	for {
@@ -181,7 +185,7 @@ func (s *Session) writeLoop() {
 			data, err := network.Encode(pkt.MsgID, pkt.SeqID, pkt.Body)
 			if err != nil {
 				logger.Error("编码消息失败",
-					"session_id", s.logID(),
+					"session_id", s.LogID(),
 					"msg_id", pkt.MsgID,
 					"error", err.Error(),
 				)
@@ -195,7 +199,7 @@ func (s *Session) writeLoop() {
 
 			if err != nil {
 				logger.Error("写入消息失败",
-					"session_id", s.logID(),
+					"session_id", s.LogID(),
 					"msg_id", pkt.MsgID,
 					"error", err.Error(),
 				)
@@ -264,9 +268,9 @@ func (s *Session) RemoteAddr() net.Addr {
 	return s.conn.RemoteAddr()
 }
 
-// logID 生成会话标识，用于日志追踪。
+// LogID 生成会话标识，用于日志追踪。
 // 包含会话 ID 和客户端地址，便于区分不同连接。
-func (s *Session) logID() string {
+func (s *Session) LogID() string {
 	if s.sessionID > 0 {
 		return fmt.Sprintf("%d@%s", s.sessionID, s.conn.RemoteAddr().String())
 	}
@@ -281,6 +285,71 @@ func (s *Session) SetTraceID(id string) {
 // TraceID 返回当前请求的 TraceID。
 func (s *Session) TraceID() string {
 	return s.traceID
+}
+
+// SetLastHeartbeat 更新最后心跳时间。
+func (s *Session) SetLastHeartbeat(t time.Time) {
+	s.lastHeartbeat = t
+}
+
+// SendError 向客户端发送统一格式的错误响应。
+func (s *Session) SendError(code uint16, errMsg string) {
+	errResp := &msg.ErrorResp{
+		Code: int32(code),
+		Msg:  errMsg,
+	}
+	data, err := proto.Marshal(errResp)
+	if err != nil {
+		logger.Error("序列化错误响应失败",
+			"session_id", s.LogID(),
+			"error", err.Error(),
+		)
+		return
+	}
+	s.Send(&network.Packet{
+		MsgID: network.MsgIDErrorResp,
+		Body:  data,
+	})
+}
+
+// SendProtoResponse 发送 proto 序列化后的响应消息。
+func (s *Session) SendProtoResponse(msgID uint16, seqID uint16, m proto.Message) {
+	data, err := proto.Marshal(m)
+	if err != nil {
+		logger.Error("序列化响应消息失败",
+			"session_id", s.LogID(),
+			"msg_id", msgID,
+			"error", err.Error(),
+		)
+		s.SendError(errcode.ErrSystem, "系统错误")
+		return
+	}
+	s.Send(&network.Packet{
+		MsgID: msgID,
+		SeqID: seqID,
+		Body:  data,
+	})
+}
+
+// SendSuccess 发送成功响应（code=0, msg="ok"）。
+func (s *Session) SendSuccess(msgID uint16, seqID uint16) {
+	successResp := &msg.ErrorResp{
+		Code: errcode.OK,
+		Msg:  "ok",
+	}
+	data, err := proto.Marshal(successResp)
+	if err != nil {
+		logger.Error("序列化成功响应失败",
+			"session_id", s.LogID(),
+			"error", err.Error(),
+		)
+		return
+	}
+	s.Send(&network.Packet{
+		MsgID: msgID,
+		SeqID: seqID,
+		Body:  data,
+	})
 }
 
 // wsReader 包装 []byte 实现 io.Reader，用于 Decode 解码。

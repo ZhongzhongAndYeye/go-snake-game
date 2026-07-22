@@ -1,6 +1,6 @@
 // 游戏主循环 — 房间级游戏生命周期管理、帧循环、碰撞检测
 
-package game
+package room
 
 import (
 	"errors"
@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"go-snake-game/internal/dao"
+	"go-snake-game/internal/game/engine"
+	"go-snake-game/internal/game/rpc"
 	"go-snake-game/pkg/logger"
 	"go-snake-game/pkg/network"
 	"go-snake-game/pkg/proto/msg"
@@ -37,11 +39,11 @@ func (r *Room) StartGame() error {
 
 	// 为每个玩家创建蛇，分配不同出生位置
 	for _, p := range r.Players {
-		r.Snakes[p.PlayerID] = NewSnake(p.PlayerID, p.Nickname)
+		r.Snakes[p.PlayerID] = engine.NewSnake(p.PlayerID, p.Nickname)
 	}
 
 	// 生成第一个食物
-	food := GenerateFood(r.snakeList(), r.MapWidth, r.MapHeight)
+	food := engine.GenerateFood(r.snakeList(), r.MapWidth, r.MapHeight)
 	if food == nil {
 		r.mu.Unlock()
 		logger.Warn("游戏初始化失败：无法生成食物", "room_id", r.RoomID)
@@ -50,7 +52,7 @@ func (r *Room) StartGame() error {
 	r.CurrentFood = food
 
 	// 设置游戏状态为进行中，启动帧定时器
-	r.GameStatus = GameStatusPlaying
+	r.GameStatus = engine.GameStatusPlaying
 	r.ticker = time.NewTicker(frameInterval)
 	r.stopCh = make(chan struct{})
 
@@ -93,7 +95,7 @@ func (r *Room) EndGame() {
 		close(r.stopCh)
 	}
 
-	r.GameStatus = GameStatusEnded
+	r.GameStatus = engine.GameStatusEnded
 	r.EndTime = time.Now()     // 记录结束时间，供定时清理判断
 	_ = r.setRoomEndedLocked() // 设置房间状态为已结束
 
@@ -132,7 +134,7 @@ func (r *Room) HandlePlayerOperation(playerID uint64, direction int) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if r.GameStatus != GameStatusPlaying {
+	if r.GameStatus != engine.GameStatusPlaying {
 		return
 	}
 
@@ -143,11 +145,11 @@ func (r *Room) HandlePlayerOperation(playerID uint64, direction int) {
 
 	// 操作频率限制：每 100ms 最多 1 次
 	now := time.Now()
-	if !snake.lastOpTime.IsZero() && now.Sub(snake.lastOpTime) < opRateLimitInterval {
+	if !snake.LastOpTime.IsZero() && now.Sub(snake.LastOpTime) < engine.OpRateLimitInterval {
 		// 静默丢弃，不返回错误
 		return
 	}
-	snake.lastOpTime = now
+	snake.LastOpTime = now
 
 	snake.ChangeDirection(direction)
 }
@@ -175,7 +177,7 @@ func (r *Room) tick() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if r.GameStatus != GameStatusPlaying {
+	if r.GameStatus != engine.GameStatusPlaying {
 		return
 	}
 
@@ -191,33 +193,53 @@ func (r *Room) tick() {
 		snake.Move(false)
 
 		// 2. 碰撞检测
-		if CheckWallCollision(snake, r.MapWidth, r.MapHeight) {
+		if engine.CheckWallCollision(snake, r.MapWidth, r.MapHeight) {
 			snake.Die()
 			logger.Info("玩家撞墙死亡", "player_id", snake.PlayerID, "room_id", r.RoomID)
 			continue
 		}
-		if CheckSelfCollision(snake) {
+		if engine.CheckSelfCollision(snake) {
 			snake.Die()
 			logger.Info("玩家撞自身死亡", "player_id", snake.PlayerID, "room_id", r.RoomID)
 			continue
 		}
 
 		// 3. 吃食物检测
-		if r.CurrentFood != nil && CheckEatFood(snake, r.CurrentFood) {
+		if r.CurrentFood != nil && engine.CheckEatFood(snake, r.CurrentFood) {
 			// 吃到食物：蛇身增长，加分数，重新生成食物
 			snake.Grow()
 			snake.AddScore(r.CurrentFood.ScoreValue)
 			logger.Info("玩家吃到食物", "player_id", snake.PlayerID, "score", snake.Score, "room_id", r.RoomID)
 
 			// 生成新食物
-			newFood := GenerateFood(r.snakeList(), r.MapWidth, r.MapHeight)
+			newFood := engine.GenerateFood(r.snakeList(), r.MapWidth, r.MapHeight)
 			if newFood != nil {
 				r.CurrentFood = newFood
 			}
 		}
 	}
 
-	// 4. 游戏结束判定：所有玩家死亡或只剩一个存活
+	// 3.5 蛇间碰撞检测（所有蛇移动完成后统一检测，避免移动顺序影响判定）
+	// 房间内只有两条蛇，头对头碰撞时双方都会死亡，保证公平
+	snakeList := r.snakeList()
+	if len(snakeList) == 2 && snakeList[0].IsAlive && snakeList[1].IsAlive {
+		if engine.CheckInterSnakeCollision(snakeList[0], snakeList[1]) {
+			snakeList[0].Die()
+			logger.Info("玩家撞到对方蛇身死亡", "player_id", snakeList[0].PlayerID, "room_id", r.RoomID)
+		}
+		if engine.CheckInterSnakeCollision(snakeList[1], snakeList[0]) {
+			snakeList[1].Die()
+			logger.Info("玩家撞到对方蛇身死亡", "player_id", snakeList[1].PlayerID, "room_id", r.RoomID)
+		}
+	}
+
+	// 4. 游戏结束判定：重新计算存活数，所有玩家死亡或只剩一个存活
+	aliveCount = 0
+	for _, snake := range r.Snakes {
+		if snake.IsAlive {
+			aliveCount++
+		}
+	}
 	if aliveCount <= 1 {
 		logger.Info("游戏结束判定：仅剩一个存活玩家或无存活玩家", "room_id", r.RoomID, "alive_count", aliveCount)
 		// 结束游戏（在 goroutine 中异步执行，避免死锁）
@@ -246,8 +268,8 @@ func (r *Room) tick() {
 }
 
 // snakeList 返回当前房间内所有蛇的切片，供 GenerateFood 使用。
-func (r *Room) snakeList() []*Snake {
-	snakes := make([]*Snake, 0, len(r.Snakes))
+func (r *Room) snakeList() []*engine.Snake {
+	snakes := make([]*engine.Snake, 0, len(r.Snakes))
 	for _, snake := range r.Snakes {
 		snakes = append(snakes, snake)
 	}
@@ -274,7 +296,7 @@ func (r *Room) broadcastGameStart() {
 		return
 	}
 
-	GlobalGatewayClient.BroadcastRoomMsg(r.RoomID, network.MsgIDGameStartNotify, body)
+	rpc.GlobalGatewayClient.BroadcastRoomMsg(r.RoomID, network.MsgIDGameStartNotify, body)
 }
 
 // broadcastGameStateSync 广播帧状态同步消息（MsgID=3003）。
@@ -294,7 +316,7 @@ func (r *Room) broadcastGameStateSync() {
 
 	// 释放锁后再进行 gRPC 调用
 	r.mu.Unlock()
-	GlobalGatewayClient.BroadcastRoomMsg(r.RoomID, network.MsgIDGameStateSync, body)
+	rpc.GlobalGatewayClient.BroadcastRoomMsg(r.RoomID, network.MsgIDGameStateSync, body)
 	r.mu.Lock()
 }
 
@@ -313,13 +335,14 @@ func (r *Room) broadcastGameOver() {
 		return
 	}
 
-	GlobalGatewayClient.BroadcastRoomMsg(r.RoomID, network.MsgIDGameOverNotify, body)
+	rpc.GlobalGatewayClient.BroadcastRoomMsg(r.RoomID, network.MsgIDGameOverNotify, body)
 }
 
 // buildSnakeStates 将 Snakes map 转换为 proto 的 SnakeState 列表。
 // 调用方必须持有 r.mu 锁。
-func buildSnakeStates(snakes map[uint64]*Snake) []*msg.SnakeState {
+func buildSnakeStates(snakes map[uint64]*engine.Snake) []*msg.SnakeState {
 	states := make([]*msg.SnakeState, 0, len(snakes))
+
 	for _, snake := range snakes {
 		body := make([]*msg.Point, 0, len(snake.Body))
 		for _, pt := range snake.Body {
@@ -338,7 +361,7 @@ func buildSnakeStates(snakes map[uint64]*Snake) []*msg.SnakeState {
 
 // buildFoodState 将 Food 转换为 proto 的 FoodState。
 // 调用方必须持有 r.mu 锁。
-func buildFoodState(food *Food) *msg.FoodState {
+func buildFoodState(food *engine.Food) *msg.FoodState {
 	if food == nil {
 		return nil
 	}
@@ -350,7 +373,7 @@ func buildFoodState(food *Food) *msg.FoodState {
 
 // buildPlayerRanks 根据玩家分数构建排名列表（按分数降序排列）。
 // 调用方必须持有 r.mu 锁。
-func buildPlayerRanks(players []*PlayerInfo, snakes map[uint64]*Snake) []*msg.PlayerRank {
+func buildPlayerRanks(players []*PlayerInfo, snakes map[uint64]*engine.Snake) []*msg.PlayerRank {
 	type playerScore struct {
 		playerID uint64
 		nickname string

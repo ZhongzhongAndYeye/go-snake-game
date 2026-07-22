@@ -213,6 +213,20 @@ func (c *GameRpcClient) GetGlobalRank(ctx context.Context) (*rpc.GetGlobalRankRe
 	return resp, nil
 }
 
+// ClearMatchQueue 调用游戏服清空匹配队列接口。
+func (c *GameRpcClient) ClearMatchQueue(ctx context.Context) (*rpc.ClearMatchQueueResponse, error) {
+	if c == nil {
+		return nil, ErrRpcClientNotInit
+	}
+	logger.Info("gRPC ClearMatchQueue 请求")
+	resp, err := c.client.ClearMatchQueue(ctx, &rpc.ClearMatchQueueRequest{})
+	if err != nil {
+		return nil, wrapGrpcError(err)
+	}
+	logger.Info("gRPC ClearMatchQueue 响应", "code", resp.Code, "msg", resp.Msg)
+	return resp, nil
+}
+
 func wrapGrpcError(err error) error {
 	st, ok := status.FromError(err)
 	if !ok {

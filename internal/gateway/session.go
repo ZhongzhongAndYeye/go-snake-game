@@ -216,7 +216,11 @@ func (s *Session) writeLoop() {
 
 // Send 将消息放入写通道，发送给客户端。
 // 非阻塞，如果通道满则丢弃并记录警告。
+// 如果会话已离线则不发送，防止向已关闭的 writeCh 写入导致 panic。
 func (s *Session) Send(pkt *network.Packet) {
+	if !s.isOnline {
+		return
+	}
 	select {
 	case s.writeCh <- pkt:
 	default:
@@ -251,6 +255,11 @@ func (s *Session) SetPlayerID(id uint64) {
 // SetLogin 设置登录状态（登录成功后调用）。
 func (s *Session) SetLogin(login bool) {
 	s.isLogin = login
+}
+
+// SetRoomID 设置玩家当前所在房间 ID。
+func (s *Session) SetRoomID(roomID string) {
+	s.RoomID = roomID
 }
 
 // IsOnline 返回是否在线。

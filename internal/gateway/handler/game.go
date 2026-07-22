@@ -1,11 +1,11 @@
 package handler
 
 import (
+	"go-snake-game/internal/gateway/rpc"
 	"go-snake-game/pkg/errcode"
 	"go-snake-game/pkg/logger"
 	"go-snake-game/pkg/network"
 	"go-snake-game/pkg/proto/msg"
-	"go-snake-game/internal/gateway/rpc"
 
 	"google.golang.org/protobuf/proto"
 )

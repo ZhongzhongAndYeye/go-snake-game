@@ -70,3 +70,14 @@ message MatchCancelResp {
   int32  code = 1; // 业务状态码，0 成功，非 0 失败
   string msg  = 2; // 提示信息
 }
+
+// ---- 清空匹配队列（测试用） ----
+
+// 清空匹配队列请求（客户端 → 游戏服）
+message ClearMatchQueueReq {}
+
+// 清空匹配队列响应（游戏服 → 客户端）
+message ClearMatchQueueResp {
+  int32  code = 1; // 业务状态码，0 成功，非 0 失败
+  string msg  = 2; // 提示信息
+}

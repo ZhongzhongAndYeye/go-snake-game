@@ -279,6 +279,21 @@ func (m *MatchManager) scanTimeoutPlayers() {
 	}
 }
 
+// ClearMatchQueue 清空整个匹配队列。
+// 用于测试场景清理残留数据，避免队列污染影响后续测试。
+func (m *MatchManager) ClearMatchQueue() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := m.rdb.Del(ctx, matchQueueKey).Err(); err != nil {
+		logger.Error("清空匹配队列失败", "error", err.Error())
+		return fmt.Errorf("%w: %v", ErrRedisOpFailed, err)
+	}
+
+	logger.Info("匹配队列已清空")
+	return nil
+}
+
 // valForItem 将 matchQueueItem 序列化为 JSON 字符串，用于 LRem 定位。
 func valForItem(item matchQueueItem) string {
 	data, _ := json.Marshal(item)

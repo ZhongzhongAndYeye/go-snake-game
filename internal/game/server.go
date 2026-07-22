@@ -72,6 +72,10 @@ func (s *GameServerImpl) StartMatch(ctx context.Context, req *pb.StartMatchReque
 		s.roomManager.BindPlayerToRoom(waitingPlayerID, roomID)
 		s.roomManager.BindPlayerToRoom(playerID, roomID)
 
+		// 通知网关将两名玩家加入房间分组，使其能收到房间广播
+		rpc.GlobalGatewayClient.JoinRoom(waitingPlayerID, roomID)
+		rpc.GlobalGatewayClient.JoinRoom(playerID, roomID)
+
 		// 房间人满（2 人），自动开始游戏
 		if err := rm.StartGame(); err != nil {
 			traceLog.Warn("gRPC StartMatch 开始游戏失败", "room_id", roomID, "error", err.Error())
@@ -326,6 +330,21 @@ func (s *GameServerImpl) PlayerOffline(ctx context.Context, req *pb.PlayerOfflin
 
 	traceLog.Info("gRPC PlayerOffline 成功", "player_id", playerID, "room_id", roomID)
 	return &pb.PlayerOfflineResponse{Code: errcode.OK, Msg: "玩家离线处理成功"}, nil
+}
+
+// ClearMatchQueue 清空匹配队列。
+// 用于测试场景清理残留数据，避免队列污染影响后续测试。
+func (s *GameServerImpl) ClearMatchQueue(ctx context.Context, req *pb.ClearMatchQueueRequest) (*pb.ClearMatchQueueResponse, error) {
+	traceLog := logger.WithTraceID(utils.GetTraceIDFromMetadata(ctx))
+	traceLog.Info("gRPC ClearMatchQueue")
+
+	if err := s.matchManager.ClearMatchQueue(); err != nil {
+		traceLog.Error("gRPC ClearMatchQueue 失败", "error", err)
+		return &pb.ClearMatchQueueResponse{Code: errcode.ErrSystem, Msg: "清空匹配队列失败"}, nil
+	}
+
+	traceLog.Info("gRPC ClearMatchQueue 成功")
+	return &pb.ClearMatchQueueResponse{Code: errcode.OK, Msg: "匹配队列已清空"}, nil
 }
 
 // GetGlobalRank 查询全服排行榜 Top100。

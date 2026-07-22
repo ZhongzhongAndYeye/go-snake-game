@@ -118,3 +118,34 @@ func (c *GatewayRpcClient) SendPlayerMsg(playerID uint64, msgID uint16, body []b
 	logger.Info("SendPlayerMsg 成功",
 		"player_id", playerID, "msg_id", msgID)
 }
+
+// JoinRoom 将玩家加入网关的房间分组。
+// 调用网关的 JoinRoom 接口，使玩家能收到该房间的广播消息。
+func (c *GatewayRpcClient) JoinRoom(playerID uint64, roomID string) {
+	if c == nil {
+		logger.Error("JoinRoom 失败：网关客户端未初始化")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	resp, err := c.client.JoinRoom(ctx, &pb.JoinRoomRequest{
+		PlayerId: playerID,
+		RoomId:   roomID,
+	})
+	if err != nil {
+		logger.Error("JoinRoom gRPC 调用失败",
+			"player_id", playerID, "room_id", roomID, "error", err.Error())
+		return
+	}
+
+	if resp.Code != 0 {
+		logger.Warn("JoinRoom 业务失败",
+			"player_id", playerID, "room_id", roomID, "code", resp.Code, "msg", resp.Msg)
+		return
+	}
+
+	logger.Info("JoinRoom 成功",
+		"player_id", playerID, "room_id", roomID)
+}

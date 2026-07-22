@@ -23,13 +23,15 @@ const (
 	MsgIDRegisterResp uint16 = 1007 // 登录服 → 客户端：注册响应
 
 	// ---- 房间匹配相关 ----
-	MsgIDMatchStartReq    uint16 = 2001 // 客户端 → 游戏服：发起匹配请求
-	MsgIDMatchStartResp   uint16 = 2002 // 游戏服 → 客户端：发起匹配响应
-	MsgIDMatchCancelReq   uint16 = 2003 // 客户端 → 游戏服：取消匹配请求
-	MsgIDMatchCancelResp  uint16 = 2004 // 游戏服 → 客户端：取消匹配响应
-	MsgIDRoomInfoNotify   uint16 = 2005 // 游戏服 → 客户端：房间信息推送
-	MsgIDGameRoomInfoReq  uint16 = 2006 // 客户端 → 游戏服：查询房间信息请求
-	MsgIDGameRoomInfoResp uint16 = 2007 // 游戏服 → 客户端：查询房间信息响应
+	MsgIDMatchStartReq       uint16 = 2001 // 客户端 → 游戏服：发起匹配请求
+	MsgIDMatchStartResp      uint16 = 2002 // 游戏服 → 客户端：发起匹配响应
+	MsgIDMatchCancelReq      uint16 = 2003 // 客户端 → 游戏服：取消匹配请求
+	MsgIDMatchCancelResp     uint16 = 2004 // 游戏服 → 客户端：取消匹配响应
+	MsgIDRoomInfoNotify      uint16 = 2005 // 游戏服 → 客户端：房间信息推送
+	MsgIDGameRoomInfoReq     uint16 = 2006 // 客户端 → 游戏服：查询房间信息请求
+	MsgIDGameRoomInfoResp    uint16 = 2007 // 游戏服 → 客户端：查询房间信息响应
+	MsgIDClearMatchQueueReq  uint16 = 2008 // 客户端 → 游戏服：清空匹配队列请求（测试用）
+	MsgIDClearMatchQueueResp uint16 = 2009 // 游戏服 → 客户端：清空匹配队列响应
 
 	// ---- 游戏战斗相关 ----
 	MsgIDGameOperationReq  uint16 = 3001 // 客户端 → 游戏服：方向操作请求

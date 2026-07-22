@@ -1021,6 +1021,96 @@ func (x *RankItem) GetRank() int32 {
 	return 0
 }
 
+// ClearMatchQueueRequest 清空匹配队列请求
+type ClearMatchQueueRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ClearMatchQueueRequest) Reset() {
+	*x = ClearMatchQueueRequest{}
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClearMatchQueueRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClearMatchQueueRequest) ProtoMessage() {}
+
+func (x *ClearMatchQueueRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClearMatchQueueRequest.ProtoReflect.Descriptor instead.
+func (*ClearMatchQueueRequest) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_rpc_game_proto_rawDescGZIP(), []int{17}
+}
+
+// ClearMatchQueueResponse 清空匹配队列响应
+type ClearMatchQueueResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          int32                  `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"` // 业务状态码，0 成功，非 0 失败
+	Msg           string                 `protobuf:"bytes,2,opt,name=msg,proto3" json:"msg,omitempty"`    // 提示信息
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ClearMatchQueueResponse) Reset() {
+	*x = ClearMatchQueueResponse{}
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClearMatchQueueResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClearMatchQueueResponse) ProtoMessage() {}
+
+func (x *ClearMatchQueueResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_rpc_game_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClearMatchQueueResponse.ProtoReflect.Descriptor instead.
+func (*ClearMatchQueueResponse) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_rpc_game_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *ClearMatchQueueResponse) GetCode() int32 {
+	if x != nil {
+		return x.Code
+	}
+	return 0
+}
+
+func (x *ClearMatchQueueResponse) GetMsg() string {
+	if x != nil {
+		return x.Msg
+	}
+	return ""
+}
+
 var File_pkg_proto_rpc_game_proto protoreflect.FileDescriptor
 
 const file_pkg_proto_rpc_game_proto_rawDesc = "" +
@@ -1094,7 +1184,11 @@ const file_pkg_proto_rpc_game_proto_rawDesc = "" +
 	"\bRankItem\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x14\n" +
 	"\x05score\x18\x02 \x01(\x05R\x05score\x12\x12\n" +
-	"\x04rank\x18\x03 \x01(\x05R\x04rank2\xae\x03\n" +
+	"\x04rank\x18\x03 \x01(\x05R\x04rank\"\x18\n" +
+	"\x16ClearMatchQueueRequest\"?\n" +
+	"\x17ClearMatchQueueResponse\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x10\n" +
+	"\x03msg\x18\x02 \x01(\tR\x03msg2\xfc\x03\n" +
 	"\vGameService\x12=\n" +
 	"\n" +
 	"StartMatch\x12\x16.rpc.StartMatchRequest\x1a\x17.rpc.StartMatchResponse\x12@\n" +
@@ -1102,7 +1196,8 @@ const file_pkg_proto_rpc_game_proto_rawDesc = "" +
 	"\vGetRoomInfo\x12\x17.rpc.GetRoomInfoRequest\x1a\x18.rpc.GetRoomInfoResponse\x12L\n" +
 	"\x0fPlayerOperation\x12\x1b.rpc.PlayerOperationRequest\x1a\x1c.rpc.PlayerOperationResponse\x12F\n" +
 	"\rPlayerOffline\x12\x19.rpc.PlayerOfflineRequest\x1a\x1a.rpc.PlayerOfflineResponse\x12F\n" +
-	"\rGetGlobalRank\x12\x19.rpc.GetGlobalRankRequest\x1a\x1a.rpc.GetGlobalRankResponseB\x13Z\x11pkg/proto/rpc;rpcb\x06proto3"
+	"\rGetGlobalRank\x12\x19.rpc.GetGlobalRankRequest\x1a\x1a.rpc.GetGlobalRankResponse\x12L\n" +
+	"\x0fClearMatchQueue\x12\x1b.rpc.ClearMatchQueueRequest\x1a\x1c.rpc.ClearMatchQueueResponseB\x13Z\x11pkg/proto/rpc;rpcb\x06proto3"
 
 var (
 	file_pkg_proto_rpc_game_proto_rawDescOnce sync.Once
@@ -1116,7 +1211,7 @@ func file_pkg_proto_rpc_game_proto_rawDescGZIP() []byte {
 	return file_pkg_proto_rpc_game_proto_rawDescData
 }
 
-var file_pkg_proto_rpc_game_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_pkg_proto_rpc_game_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_pkg_proto_rpc_game_proto_goTypes = []any{
 	(*Point)(nil),                   // 0: rpc.Point
 	(*SnakeState)(nil),              // 1: rpc.SnakeState
@@ -1135,6 +1230,8 @@ var file_pkg_proto_rpc_game_proto_goTypes = []any{
 	(*GetGlobalRankRequest)(nil),    // 14: rpc.GetGlobalRankRequest
 	(*GetGlobalRankResponse)(nil),   // 15: rpc.GetGlobalRankResponse
 	(*RankItem)(nil),                // 16: rpc.RankItem
+	(*ClearMatchQueueRequest)(nil),  // 17: rpc.ClearMatchQueueRequest
+	(*ClearMatchQueueResponse)(nil), // 18: rpc.ClearMatchQueueResponse
 }
 var file_pkg_proto_rpc_game_proto_depIdxs = []int32{
 	0,  // 0: rpc.SnakeState.body:type_name -> rpc.Point
@@ -1149,14 +1246,16 @@ var file_pkg_proto_rpc_game_proto_depIdxs = []int32{
 	10, // 9: rpc.GameService.PlayerOperation:input_type -> rpc.PlayerOperationRequest
 	12, // 10: rpc.GameService.PlayerOffline:input_type -> rpc.PlayerOfflineRequest
 	14, // 11: rpc.GameService.GetGlobalRank:input_type -> rpc.GetGlobalRankRequest
-	5,  // 12: rpc.GameService.StartMatch:output_type -> rpc.StartMatchResponse
-	7,  // 13: rpc.GameService.CancelMatch:output_type -> rpc.CancelMatchResponse
-	9,  // 14: rpc.GameService.GetRoomInfo:output_type -> rpc.GetRoomInfoResponse
-	11, // 15: rpc.GameService.PlayerOperation:output_type -> rpc.PlayerOperationResponse
-	13, // 16: rpc.GameService.PlayerOffline:output_type -> rpc.PlayerOfflineResponse
-	15, // 17: rpc.GameService.GetGlobalRank:output_type -> rpc.GetGlobalRankResponse
-	12, // [12:18] is the sub-list for method output_type
-	6,  // [6:12] is the sub-list for method input_type
+	17, // 12: rpc.GameService.ClearMatchQueue:input_type -> rpc.ClearMatchQueueRequest
+	5,  // 13: rpc.GameService.StartMatch:output_type -> rpc.StartMatchResponse
+	7,  // 14: rpc.GameService.CancelMatch:output_type -> rpc.CancelMatchResponse
+	9,  // 15: rpc.GameService.GetRoomInfo:output_type -> rpc.GetRoomInfoResponse
+	11, // 16: rpc.GameService.PlayerOperation:output_type -> rpc.PlayerOperationResponse
+	13, // 17: rpc.GameService.PlayerOffline:output_type -> rpc.PlayerOfflineResponse
+	15, // 18: rpc.GameService.GetGlobalRank:output_type -> rpc.GetGlobalRankResponse
+	18, // 19: rpc.GameService.ClearMatchQueue:output_type -> rpc.ClearMatchQueueResponse
+	13, // [13:20] is the sub-list for method output_type
+	6,  // [6:13] is the sub-list for method input_type
 	6,  // [6:6] is the sub-list for extension type_name
 	6,  // [6:6] is the sub-list for extension extendee
 	0,  // [0:6] is the sub-list for field type_name
@@ -1173,7 +1272,7 @@ func file_pkg_proto_rpc_game_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_pkg_proto_rpc_game_proto_rawDesc), len(file_pkg_proto_rpc_game_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   17,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -28,6 +28,7 @@ const (
 	GameService_PlayerOperation_FullMethodName = "/rpc.GameService/PlayerOperation"
 	GameService_PlayerOffline_FullMethodName   = "/rpc.GameService/PlayerOffline"
 	GameService_GetGlobalRank_FullMethodName   = "/rpc.GameService/GetGlobalRank"
+	GameService_ClearMatchQueue_FullMethodName = "/rpc.GameService/ClearMatchQueue"
 )
 
 // GameServiceClient is the client API for GameService service.
@@ -53,6 +54,9 @@ type GameServiceClient interface {
 	// GetGlobalRank 查询全服排行榜
 	// 返回 Top100 玩家排名，按分数从高到低排序。
 	GetGlobalRank(ctx context.Context, in *GetGlobalRankRequest, opts ...grpc.CallOption) (*GetGlobalRankResponse, error)
+	// ClearMatchQueue 清空匹配队列
+	// 用于测试场景清理残留数据，避免队列污染影响后续测试。
+	ClearMatchQueue(ctx context.Context, in *ClearMatchQueueRequest, opts ...grpc.CallOption) (*ClearMatchQueueResponse, error)
 }
 
 type gameServiceClient struct {
@@ -123,6 +127,16 @@ func (c *gameServiceClient) GetGlobalRank(ctx context.Context, in *GetGlobalRank
 	return out, nil
 }
 
+func (c *gameServiceClient) ClearMatchQueue(ctx context.Context, in *ClearMatchQueueRequest, opts ...grpc.CallOption) (*ClearMatchQueueResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ClearMatchQueueResponse)
+	err := c.cc.Invoke(ctx, GameService_ClearMatchQueue_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GameServiceServer is the server API for GameService service.
 // All implementations must embed UnimplementedGameServiceServer
 // for forward compatibility.
@@ -146,6 +160,9 @@ type GameServiceServer interface {
 	// GetGlobalRank 查询全服排行榜
 	// 返回 Top100 玩家排名，按分数从高到低排序。
 	GetGlobalRank(context.Context, *GetGlobalRankRequest) (*GetGlobalRankResponse, error)
+	// ClearMatchQueue 清空匹配队列
+	// 用于测试场景清理残留数据，避免队列污染影响后续测试。
+	ClearMatchQueue(context.Context, *ClearMatchQueueRequest) (*ClearMatchQueueResponse, error)
 	mustEmbedUnimplementedGameServiceServer()
 }
 
@@ -173,6 +190,9 @@ func (UnimplementedGameServiceServer) PlayerOffline(context.Context, *PlayerOffl
 }
 func (UnimplementedGameServiceServer) GetGlobalRank(context.Context, *GetGlobalRankRequest) (*GetGlobalRankResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetGlobalRank not implemented")
+}
+func (UnimplementedGameServiceServer) ClearMatchQueue(context.Context, *ClearMatchQueueRequest) (*ClearMatchQueueResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ClearMatchQueue not implemented")
 }
 func (UnimplementedGameServiceServer) mustEmbedUnimplementedGameServiceServer() {}
 func (UnimplementedGameServiceServer) testEmbeddedByValue()                     {}
@@ -303,6 +323,24 @@ func _GameService_GetGlobalRank_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GameService_ClearMatchQueue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ClearMatchQueueRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GameServiceServer).ClearMatchQueue(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GameService_ClearMatchQueue_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GameServiceServer).ClearMatchQueue(ctx, req.(*ClearMatchQueueRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GameService_ServiceDesc is the grpc.ServiceDesc for GameService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -333,6 +371,10 @@ var GameService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetGlobalRank",
 			Handler:    _GameService_GetGlobalRank_Handler,
+		},
+		{
+			MethodName: "ClearMatchQueue",
+			Handler:    _GameService_ClearMatchQueue_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

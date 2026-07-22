@@ -260,6 +260,112 @@ func (x *PushToPlayerResponse) GetMsg() string {
 	return ""
 }
 
+// JoinRoomRequest 加入房间请求
+type JoinRoomRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"` // 玩家 ID
+	RoomId        string                 `protobuf:"bytes,2,opt,name=room_id,json=roomId,proto3" json:"room_id,omitempty"`        // 房间 ID
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *JoinRoomRequest) Reset() {
+	*x = JoinRoomRequest{}
+	mi := &file_pkg_proto_rpc_gateway_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *JoinRoomRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*JoinRoomRequest) ProtoMessage() {}
+
+func (x *JoinRoomRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_rpc_gateway_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use JoinRoomRequest.ProtoReflect.Descriptor instead.
+func (*JoinRoomRequest) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_rpc_gateway_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *JoinRoomRequest) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *JoinRoomRequest) GetRoomId() string {
+	if x != nil {
+		return x.RoomId
+	}
+	return ""
+}
+
+// JoinRoomResponse 加入房间响应
+type JoinRoomResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          int32                  `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"` // 业务状态码，0 成功，非 0 失败
+	Msg           string                 `protobuf:"bytes,2,opt,name=msg,proto3" json:"msg,omitempty"`    // 提示信息
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *JoinRoomResponse) Reset() {
+	*x = JoinRoomResponse{}
+	mi := &file_pkg_proto_rpc_gateway_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *JoinRoomResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*JoinRoomResponse) ProtoMessage() {}
+
+func (x *JoinRoomResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_rpc_gateway_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use JoinRoomResponse.ProtoReflect.Descriptor instead.
+func (*JoinRoomResponse) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_rpc_gateway_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *JoinRoomResponse) GetCode() int32 {
+	if x != nil {
+		return x.Code
+	}
+	return 0
+}
+
+func (x *JoinRoomResponse) GetMsg() string {
+	if x != nil {
+		return x.Msg
+	}
+	return ""
+}
+
 var File_pkg_proto_rpc_gateway_proto protoreflect.FileDescriptor
 
 const file_pkg_proto_rpc_gateway_proto_rawDesc = "" +
@@ -279,11 +385,18 @@ const file_pkg_proto_rpc_gateway_proto_rawDesc = "" +
 	"\x04body\x18\x03 \x01(\fR\x04body\"<\n" +
 	"\x14PushToPlayerResponse\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x10\n" +
-	"\x03msg\x18\x02 \x01(\tR\x03msg2\x94\x01\n" +
+	"\x03msg\x18\x02 \x01(\tR\x03msg\"G\n" +
+	"\x0fJoinRoomRequest\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x17\n" +
+	"\aroom_id\x18\x02 \x01(\tR\x06roomId\"8\n" +
+	"\x10JoinRoomResponse\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x10\n" +
+	"\x03msg\x18\x02 \x01(\tR\x03msg2\xcd\x01\n" +
 	"\x0eGatewayService\x12=\n" +
 	"\n" +
 	"PushToRoom\x12\x16.rpc.PushToRoomRequest\x1a\x17.rpc.PushToRoomResponse\x12C\n" +
-	"\fPushToPlayer\x12\x18.rpc.PushToPlayerRequest\x1a\x19.rpc.PushToPlayerResponseB\x13Z\x11pkg/proto/rpc;rpcb\x06proto3"
+	"\fPushToPlayer\x12\x18.rpc.PushToPlayerRequest\x1a\x19.rpc.PushToPlayerResponse\x127\n" +
+	"\bJoinRoom\x12\x14.rpc.JoinRoomRequest\x1a\x15.rpc.JoinRoomResponseB\x13Z\x11pkg/proto/rpc;rpcb\x06proto3"
 
 var (
 	file_pkg_proto_rpc_gateway_proto_rawDescOnce sync.Once
@@ -297,20 +410,24 @@ func file_pkg_proto_rpc_gateway_proto_rawDescGZIP() []byte {
 	return file_pkg_proto_rpc_gateway_proto_rawDescData
 }
 
-var file_pkg_proto_rpc_gateway_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_pkg_proto_rpc_gateway_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_pkg_proto_rpc_gateway_proto_goTypes = []any{
 	(*PushToRoomRequest)(nil),    // 0: rpc.PushToRoomRequest
 	(*PushToRoomResponse)(nil),   // 1: rpc.PushToRoomResponse
 	(*PushToPlayerRequest)(nil),  // 2: rpc.PushToPlayerRequest
 	(*PushToPlayerResponse)(nil), // 3: rpc.PushToPlayerResponse
+	(*JoinRoomRequest)(nil),      // 4: rpc.JoinRoomRequest
+	(*JoinRoomResponse)(nil),     // 5: rpc.JoinRoomResponse
 }
 var file_pkg_proto_rpc_gateway_proto_depIdxs = []int32{
 	0, // 0: rpc.GatewayService.PushToRoom:input_type -> rpc.PushToRoomRequest
 	2, // 1: rpc.GatewayService.PushToPlayer:input_type -> rpc.PushToPlayerRequest
-	1, // 2: rpc.GatewayService.PushToRoom:output_type -> rpc.PushToRoomResponse
-	3, // 3: rpc.GatewayService.PushToPlayer:output_type -> rpc.PushToPlayerResponse
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
+	4, // 2: rpc.GatewayService.JoinRoom:input_type -> rpc.JoinRoomRequest
+	1, // 3: rpc.GatewayService.PushToRoom:output_type -> rpc.PushToRoomResponse
+	3, // 4: rpc.GatewayService.PushToPlayer:output_type -> rpc.PushToPlayerResponse
+	5, // 5: rpc.GatewayService.JoinRoom:output_type -> rpc.JoinRoomResponse
+	3, // [3:6] is the sub-list for method output_type
+	0, // [0:3] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -327,7 +444,7 @@ func file_pkg_proto_rpc_gateway_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_pkg_proto_rpc_gateway_proto_rawDesc), len(file_pkg_proto_rpc_gateway_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

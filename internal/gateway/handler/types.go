@@ -34,6 +34,9 @@ type Session interface {
 	// SetLogin 设置登录状态。
 	SetLogin(login bool)
 
+	// SetRoomID 设置玩家当前所在房间 ID。
+	SetRoomID(roomID string)
+
 	// SendError 向客户端发送统一格式的错误响应。
 	SendError(code uint16, errMsg string)
 

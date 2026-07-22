@@ -24,6 +24,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	GatewayService_PushToRoom_FullMethodName   = "/rpc.GatewayService/PushToRoom"
 	GatewayService_PushToPlayer_FullMethodName = "/rpc.GatewayService/PushToPlayer"
+	GatewayService_JoinRoom_FullMethodName     = "/rpc.GatewayService/JoinRoom"
 )
 
 // GatewayServiceClient is the client API for GatewayService service.
@@ -37,6 +38,8 @@ type GatewayServiceClient interface {
 	PushToRoom(ctx context.Context, in *PushToRoomRequest, opts ...grpc.CallOption) (*PushToRoomResponse, error)
 	// PushToPlayer 向指定单个玩家发送消息
 	PushToPlayer(ctx context.Context, in *PushToPlayerRequest, opts ...grpc.CallOption) (*PushToPlayerResponse, error)
+	// JoinRoom 将玩家加入网关的房间分组，使其能收到房间广播
+	JoinRoom(ctx context.Context, in *JoinRoomRequest, opts ...grpc.CallOption) (*JoinRoomResponse, error)
 }
 
 type gatewayServiceClient struct {
@@ -67,6 +70,16 @@ func (c *gatewayServiceClient) PushToPlayer(ctx context.Context, in *PushToPlaye
 	return out, nil
 }
 
+func (c *gatewayServiceClient) JoinRoom(ctx context.Context, in *JoinRoomRequest, opts ...grpc.CallOption) (*JoinRoomResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(JoinRoomResponse)
+	err := c.cc.Invoke(ctx, GatewayService_JoinRoom_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GatewayServiceServer is the server API for GatewayService service.
 // All implementations must embed UnimplementedGatewayServiceServer
 // for forward compatibility.
@@ -78,6 +91,8 @@ type GatewayServiceServer interface {
 	PushToRoom(context.Context, *PushToRoomRequest) (*PushToRoomResponse, error)
 	// PushToPlayer 向指定单个玩家发送消息
 	PushToPlayer(context.Context, *PushToPlayerRequest) (*PushToPlayerResponse, error)
+	// JoinRoom 将玩家加入网关的房间分组，使其能收到房间广播
+	JoinRoom(context.Context, *JoinRoomRequest) (*JoinRoomResponse, error)
 	mustEmbedUnimplementedGatewayServiceServer()
 }
 
@@ -93,6 +108,9 @@ func (UnimplementedGatewayServiceServer) PushToRoom(context.Context, *PushToRoom
 }
 func (UnimplementedGatewayServiceServer) PushToPlayer(context.Context, *PushToPlayerRequest) (*PushToPlayerResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method PushToPlayer not implemented")
+}
+func (UnimplementedGatewayServiceServer) JoinRoom(context.Context, *JoinRoomRequest) (*JoinRoomResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method JoinRoom not implemented")
 }
 func (UnimplementedGatewayServiceServer) mustEmbedUnimplementedGatewayServiceServer() {}
 func (UnimplementedGatewayServiceServer) testEmbeddedByValue()                        {}
@@ -151,6 +169,24 @@ func _GatewayService_PushToPlayer_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GatewayService_JoinRoom_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(JoinRoomRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GatewayServiceServer).JoinRoom(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GatewayService_JoinRoom_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GatewayServiceServer).JoinRoom(ctx, req.(*JoinRoomRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GatewayService_ServiceDesc is the grpc.ServiceDesc for GatewayService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -165,6 +201,10 @@ var GatewayService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PushToPlayer",
 			Handler:    _GatewayService_PushToPlayer_Handler,
+		},
+		{
+			MethodName: "JoinRoom",
+			Handler:    _GatewayService_JoinRoom_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

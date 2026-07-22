@@ -19,6 +19,9 @@ var (
 
 	// SendToPlayer 向指定玩家发送消息，由 gateway 包注入
 	SendToPlayer func(playerID uint64, pkt *network.Packet) bool
+
+	// JoinRoom 将玩家加入网关的房间分组，由 gateway 包注入
+	JoinRoom func(playerID uint64, roomID string)
 )
 
 // GatewayRpcServer 网关 gRPC 推送服务实现。
@@ -91,4 +94,24 @@ func (s *GatewayRpcServer) PushToPlayer(ctx context.Context, req *pb.PushToPlaye
 
 	logger.Info("gRPC PushToPlayer 成功", "player_id", playerID, "msg_id", msgID)
 	return &pb.PushToPlayerResponse{Code: 0, Msg: "推送成功"}, nil
+}
+
+// JoinRoom 将玩家加入网关的房间分组。
+func (s *GatewayRpcServer) JoinRoom(ctx context.Context, req *pb.JoinRoomRequest) (*pb.JoinRoomResponse, error) {
+	playerID := req.GetPlayerId()
+	roomID := req.GetRoomId()
+
+	logger.Info("gRPC JoinRoom 请求", "player_id", playerID, "room_id", roomID)
+
+	if playerID == 0 || roomID == "" {
+		return &pb.JoinRoomResponse{Code: 1, Msg: "参数无效"}, nil
+	}
+
+	if JoinRoom == nil {
+		return &pb.JoinRoomResponse{Code: 1, Msg: "推送服务未初始化"}, nil
+	}
+	JoinRoom(playerID, roomID)
+
+	logger.Info("gRPC JoinRoom 成功", "player_id", playerID, "room_id", roomID)
+	return &pb.JoinRoomResponse{Code: 0, Msg: "成功"}, nil
 }

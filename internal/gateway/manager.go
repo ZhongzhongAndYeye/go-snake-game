@@ -281,7 +281,7 @@ func (m *SessionManager) BroadcastToRoom(roomID string, pkt *network.Packet) int
 
 	sentCount := 0
 	for _, sid := range sessionIDs {
-		if s := m.GetSession(sid); s != nil {
+		if s := m.GetSession(sid); s != nil && s.IsOnline() {
 			s.Send(pkt)
 			sentCount++
 		}

@@ -61,6 +61,8 @@ func (*HeartbeatReq) Descriptor() ([]byte, []int) {
 // 心跳响应（服务端 → 客户端）
 type HeartbeatResp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          int32                  `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"` // 状态码：0=成功
+	Msg           string                 `protobuf:"bytes,2,opt,name=msg,proto3" json:"msg,omitempty"`    // 提示信息
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -93,6 +95,20 @@ func (x *HeartbeatResp) ProtoReflect() protoreflect.Message {
 // Deprecated: Use HeartbeatResp.ProtoReflect.Descriptor instead.
 func (*HeartbeatResp) Descriptor() ([]byte, []int) {
 	return file_pkg_proto_msg_base_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *HeartbeatResp) GetCode() int32 {
+	if x != nil {
+		return x.Code
+	}
+	return 0
+}
+
+func (x *HeartbeatResp) GetMsg() string {
+	if x != nil {
+		return x.Msg
+	}
+	return ""
 }
 
 // 登录请求（客户端 → 登录服）
@@ -578,13 +594,105 @@ func (x *MatchCancelResp) GetMsg() string {
 	return ""
 }
 
+// 清空匹配队列请求（客户端 → 游戏服）
+type ClearMatchQueueReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ClearMatchQueueReq) Reset() {
+	*x = ClearMatchQueueReq{}
+	mi := &file_pkg_proto_msg_base_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClearMatchQueueReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClearMatchQueueReq) ProtoMessage() {}
+
+func (x *ClearMatchQueueReq) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_msg_base_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClearMatchQueueReq.ProtoReflect.Descriptor instead.
+func (*ClearMatchQueueReq) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_msg_base_proto_rawDescGZIP(), []int{11}
+}
+
+// 清空匹配队列响应（游戏服 → 客户端）
+type ClearMatchQueueResp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          int32                  `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"` // 业务状态码，0 成功，非 0 失败
+	Msg           string                 `protobuf:"bytes,2,opt,name=msg,proto3" json:"msg,omitempty"`    // 提示信息
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ClearMatchQueueResp) Reset() {
+	*x = ClearMatchQueueResp{}
+	mi := &file_pkg_proto_msg_base_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClearMatchQueueResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClearMatchQueueResp) ProtoMessage() {}
+
+func (x *ClearMatchQueueResp) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_msg_base_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClearMatchQueueResp.ProtoReflect.Descriptor instead.
+func (*ClearMatchQueueResp) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_msg_base_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *ClearMatchQueueResp) GetCode() int32 {
+	if x != nil {
+		return x.Code
+	}
+	return 0
+}
+
+func (x *ClearMatchQueueResp) GetMsg() string {
+	if x != nil {
+		return x.Msg
+	}
+	return ""
+}
+
 var File_pkg_proto_msg_base_proto protoreflect.FileDescriptor
 
 const file_pkg_proto_msg_base_proto_rawDesc = "" +
 	"\n" +
 	"\x18pkg/proto/msg/base.proto\x12\x03msg\"\x0e\n" +
-	"\fHeartbeatReq\"\x0f\n" +
-	"\rHeartbeatResp\"B\n" +
+	"\fHeartbeatReq\"5\n" +
+	"\rHeartbeatResp\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x10\n" +
+	"\x03msg\x18\x02 \x01(\tR\x03msg\"B\n" +
 	"\bLoginReq\x12\x1a\n" +
 	"\busername\x18\x01 \x01(\tR\busername\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\"d\n" +
@@ -613,6 +721,10 @@ const file_pkg_proto_msg_base_proto_rawDesc = "" +
 	"\x0eMatchCancelReq\"7\n" +
 	"\x0fMatchCancelResp\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x10\n" +
+	"\x03msg\x18\x02 \x01(\tR\x03msg\"\x14\n" +
+	"\x12ClearMatchQueueReq\";\n" +
+	"\x13ClearMatchQueueResp\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x10\n" +
 	"\x03msg\x18\x02 \x01(\tR\x03msgB\x0fZ\rpkg/proto/msgb\x06proto3"
 
 var (
@@ -627,19 +739,21 @@ func file_pkg_proto_msg_base_proto_rawDescGZIP() []byte {
 	return file_pkg_proto_msg_base_proto_rawDescData
 }
 
-var file_pkg_proto_msg_base_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_pkg_proto_msg_base_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_pkg_proto_msg_base_proto_goTypes = []any{
-	(*HeartbeatReq)(nil),    // 0: msg.HeartbeatReq
-	(*HeartbeatResp)(nil),   // 1: msg.HeartbeatResp
-	(*LoginReq)(nil),        // 2: msg.LoginReq
-	(*LoginResp)(nil),       // 3: msg.LoginResp
-	(*RegisterReq)(nil),     // 4: msg.RegisterReq
-	(*RegisterResp)(nil),    // 5: msg.RegisterResp
-	(*ErrorResp)(nil),       // 6: msg.ErrorResp
-	(*MatchStartReq)(nil),   // 7: msg.MatchStartReq
-	(*MatchStartResp)(nil),  // 8: msg.MatchStartResp
-	(*MatchCancelReq)(nil),  // 9: msg.MatchCancelReq
-	(*MatchCancelResp)(nil), // 10: msg.MatchCancelResp
+	(*HeartbeatReq)(nil),        // 0: msg.HeartbeatReq
+	(*HeartbeatResp)(nil),       // 1: msg.HeartbeatResp
+	(*LoginReq)(nil),            // 2: msg.LoginReq
+	(*LoginResp)(nil),           // 3: msg.LoginResp
+	(*RegisterReq)(nil),         // 4: msg.RegisterReq
+	(*RegisterResp)(nil),        // 5: msg.RegisterResp
+	(*ErrorResp)(nil),           // 6: msg.ErrorResp
+	(*MatchStartReq)(nil),       // 7: msg.MatchStartReq
+	(*MatchStartResp)(nil),      // 8: msg.MatchStartResp
+	(*MatchCancelReq)(nil),      // 9: msg.MatchCancelReq
+	(*MatchCancelResp)(nil),     // 10: msg.MatchCancelResp
+	(*ClearMatchQueueReq)(nil),  // 11: msg.ClearMatchQueueReq
+	(*ClearMatchQueueResp)(nil), // 12: msg.ClearMatchQueueResp
 }
 var file_pkg_proto_msg_base_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -660,7 +774,7 @@ func file_pkg_proto_msg_base_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_pkg_proto_msg_base_proto_rawDesc), len(file_pkg_proto_msg_base_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -13,6 +13,8 @@ service GatewayService {
   rpc PushToRoom(PushToRoomRequest) returns (PushToRoomResponse);
   // PushToPlayer 向指定单个玩家发送消息
   rpc PushToPlayer(PushToPlayerRequest) returns (PushToPlayerResponse);
+  // JoinRoom 将玩家加入网关的房间分组，使其能收到房间广播
+  rpc JoinRoom(JoinRoomRequest) returns (JoinRoomResponse);
 }
 
 // PushToRoomRequest 房间广播请求
@@ -38,6 +40,18 @@ message PushToPlayerRequest {
 
 // PushToPlayerResponse 单推消息响应
 message PushToPlayerResponse {
+  int32  code = 1; // 业务状态码，0 成功，非 0 失败
+  string msg  = 2; // 提示信息
+}
+
+// JoinRoomRequest 加入房间请求
+message JoinRoomRequest {
+  uint64 player_id = 1; // 玩家 ID
+  string room_id   = 2; // 房间 ID
+}
+
+// JoinRoomResponse 加入房间响应
+message JoinRoomResponse {
   int32  code = 1; // 业务状态码，0 成功，非 0 失败
   string msg  = 2; // 提示信息
 }

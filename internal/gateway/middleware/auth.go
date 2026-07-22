@@ -11,9 +11,16 @@ import (
 )
 
 // AuthMiddleware 鉴权中间件，验证客户端是否已登录。
+// 如果 Session 已登录（通过 LoginHandler 设置），直接放行；
+// 否则尝试从请求体中提取 Token 进行校验。
 func AuthMiddleware(next handler.HandlerFunc) handler.HandlerFunc {
 	return func(s handler.Session, packet *network.Packet) {
-		// 尝试从请求中提取 Token（当前实现：未登录直接返回错误）
+		// Session 已登录（LoginHandler 已设置 playerID 和 isLogin），直接放行
+		if s.PlayerID() != 0 {
+			next(s, packet)
+			return
+		}
+
 		logger.Info("鉴权中间件处理", "session_id", s.LogID(), "msg_id", packet.MsgID, "seq_id", packet.SeqID)
 
 		token, err := extractTokenFromRequest(packet.Body)
@@ -58,6 +65,9 @@ func extractTokenFromRequest(body []byte) (string, error) {
 	if len(body) == 0 {
 		return "", errors.New("请求体为空")
 	}
+	// 尝试从请求体中提取 Token 字段
+	// 当前协议设计中 Token 由 LoginHandler 在登录时设置到 Session，
+	// 后续请求通过 Session.isLogin 判断，不再从请求体提取 Token。
 	return "", errors.New("请先登录")
 }
 

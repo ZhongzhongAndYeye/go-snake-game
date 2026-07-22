@@ -83,7 +83,7 @@ func healthHandler(serviceName string) http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(code)
-		json.NewEncoder(w).Encode(status)
+		_ = json.NewEncoder(w).Encode(status)
 	}
 }
 

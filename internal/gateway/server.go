@@ -43,6 +43,7 @@ func NewGatewayServer(listenAddr string) *GatewayServer {
 	router.Register(network.MsgIDGameOperationReq, handler.GameOperationHandler)
 	router.Register(network.MsgIDGameRoomInfoReq, handler.RoomInfoQueryHandler)
 	router.Register(network.MsgIDRankQueryReq, handler.RankQueryHandler)
+	router.RegisterPublic(network.MsgIDClearMatchQueueReq, handler.ClearMatchQueueHandler)
 
 	// 注入 rpc 包的 BroadcastToRoom / SendToPlayer 回调
 	rpc.BroadcastToRoom = func(roomID string, pkt *network.Packet) int {
@@ -50,11 +51,21 @@ func NewGatewayServer(listenAddr string) *GatewayServer {
 	}
 	rpc.SendToPlayer = func(playerID uint64, pkt *network.Packet) bool {
 		session := GetManager().GetSessionByPlayerID(playerID)
-		if session == nil {
+		if session == nil || !session.IsOnline() {
 			return false
 		}
 		session.Send(pkt)
 		return true
+	}
+
+	// 注入 handler 包的 JoinRoomFunc 回调，用于匹配成功时将玩家加入网关房间分组
+	handler.JoinRoomFunc = func(playerID uint64, roomID string) {
+		GetManager().JoinRoom(playerID, roomID)
+	}
+
+	// 注入 rpc 包的 JoinRoom 回调，用于游戏服通过 gRPC 将玩家加入房间分组
+	rpc.JoinRoom = func(playerID uint64, roomID string) {
+		GetManager().JoinRoom(playerID, roomID)
 	}
 
 	return &GatewayServer{

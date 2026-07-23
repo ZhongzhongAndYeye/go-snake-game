@@ -1,3 +1,4 @@
+// Package gateway 提供 WebSocket 网关服务器，负责客户端连接管理、消息路由分发和 gRPC 回调注入。
 package gateway
 
 import (

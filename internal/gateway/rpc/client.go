@@ -1,5 +1,5 @@
-// 网关 gRPC 客户端封装
-// 网关通过此客户端调用登录服和游戏服的 gRPC 接口
+// Package rpc 提供网关与后端服务（登录服、游戏服）的 gRPC 通信封装。
+// 网关通过此包调用登录服和游戏服的 gRPC 接口，并将错误统一转换为业务错误码。
 
 package rpc
 
@@ -227,6 +227,7 @@ func (c *GameRpcClient) ClearMatchQueue(ctx context.Context) (*rpc.ClearMatchQue
 	return resp, nil
 }
 
+// wrapGrpcError 将 gRPC 错误码转换为业务错误，便于上层统一处理。
 func wrapGrpcError(err error) error {
 	st, ok := status.FromError(err)
 	if !ok {

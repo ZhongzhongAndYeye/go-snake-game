@@ -1,3 +1,5 @@
+// Package network 提供游戏服务器网络通信层的编解码与消息定义。
+// 实现基于大端序的二进制协议，包含消息包编码/解码、消息 ID 路由等核心能力。
 package network
 
 import (

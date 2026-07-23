@@ -1,6 +1,5 @@
-// 消息处理函数类型定义与 Session 接口
-// handler 包定义核心类型，middleware 和 gateway 包均导入此包，避免循环依赖
-
+// Package handler 提供消息处理函数类型定义和 Session 接口，避免子包间循环依赖。
+// handler 包定义核心类型，middleware 和 gateway 包均导入此包。
 package handler
 
 import (

@@ -1,3 +1,4 @@
+// 网关服务入口，负责 WebSocket 连接管理、消息路由转发、gRPC 推送服务。
 package main
 
 import (

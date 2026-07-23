@@ -1,3 +1,5 @@
+// Package logger 提供基于 zap 的统一日志组件。
+// 支持控制台/文件双输出、JSON/Console 双格式、日志级别过滤、调用栈追踪与链路 TraceID 透传。
 package logger
 
 import (

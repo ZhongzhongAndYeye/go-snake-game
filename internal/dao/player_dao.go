@@ -1,3 +1,4 @@
+// Package dao 提供玩家数据访问层，封装玩家相关的数据库增删改查操作。
 package dao
 
 import (

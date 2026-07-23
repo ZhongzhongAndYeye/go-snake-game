@@ -1,3 +1,4 @@
+// Package service 提供登录业务逻辑，处理用户注册、登录、Token 校验等核心业务。
 package service
 
 import (

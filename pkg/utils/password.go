@@ -1,3 +1,4 @@
+// Package utils 提供通用工具函数，包括密码加密、Token 管理、排行榜操作与链路追踪。
 package utils
 
 import "golang.org/x/crypto/bcrypt"

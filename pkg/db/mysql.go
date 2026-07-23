@@ -1,3 +1,5 @@
+// Package db 提供 MySQL 与 Redis 数据库连接管理。
+// 通过 InitMySQL / InitRedis 初始化全局单例，支持连接池配置、健康检查与日志适配。
 package db
 
 import (

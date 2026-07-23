@@ -1,3 +1,4 @@
+// Package engine 提供贪吃蛇游戏核心引擎，包括蛇的移动、碰撞检测、食物生成等基础逻辑。
 package engine
 
 import (

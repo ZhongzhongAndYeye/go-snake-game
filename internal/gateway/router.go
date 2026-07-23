@@ -1,3 +1,4 @@
+// Package gateway 提供 WebSocket 网关服务器，负责客户端连接管理、消息路由分发和 gRPC 回调注入。
 package gateway
 
 import (
@@ -10,7 +11,8 @@ import (
 	"go-snake-game/pkg/utils"
 )
 
-// Router 注册式消息路由器
+// Router 注册式消息路由器，根据消息 ID 将请求分发到对应的处理函数。
+// 支持注册需鉴权路由、免鉴权路由和全局中间件链。
 type Router struct {
 	routes       map[uint16]handler.HandlerFunc
 	publicRoutes map[uint16]handler.HandlerFunc

@@ -1,3 +1,5 @@
+// Package config 提供应用配置的加载与管理功能。
+// 支持 YAML 配置文件读取和环境变量覆盖，所有配置统一由 AppConfig 结构体承载。
 package config
 
 import (

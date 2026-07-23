@@ -1,3 +1,4 @@
+// Package model 提供玩家数据模型定义，映射数据库 players 表结构。
 package model
 
 import (

@@ -1,3 +1,4 @@
+// Package middleware 提供网关中间件，包括全链路追踪、日志记录、限流和鉴权。
 package middleware
 
 import (
@@ -61,16 +62,19 @@ func AuthMiddleware(next handler.HandlerFunc) handler.HandlerFunc {
 	}
 }
 
+// extractTokenFromRequest 从请求体中提取 Token 字段。
+// 当前协议设计中 Token 由 LoginHandler 在登录时设置到 Session，
+// 后续请求通过 Session.isLogin 判断，不再从请求体提取 Token。
 func extractTokenFromRequest(body []byte) (string, error) {
 	if len(body) == 0 {
 		return "", errors.New("请求体为空")
 	}
-	// 尝试从请求体中提取 Token 字段
 	// 当前协议设计中 Token 由 LoginHandler 在登录时设置到 Session，
 	// 后续请求通过 Session.isLogin 判断，不再从请求体提取 Token。
 	return "", errors.New("请先登录")
 }
 
+// maskToken 对 Token 进行脱敏处理，仅保留前4位和后4位，中间用 *** 代替。
 func maskToken(token string) string {
 	if len(token) <= 8 {
 		return "***"

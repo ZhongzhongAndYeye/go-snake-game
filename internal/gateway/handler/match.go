@@ -1,3 +1,4 @@
+// Package handler 提供消息处理函数类型定义和 Session 接口，避免子包间循环依赖。
 package handler
 
 import (

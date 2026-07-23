@@ -1,6 +1,6 @@
-// 网关 gRPC 推送服务
-// 游戏服可通过 gRPC 调用网关，向指定房间或单个玩家主动推送消息
-// 使用函数变量注入模式避免循环依赖（rpc 包不导入 gateway 或 handler）
+// Package rpc 提供网关与后端服务（登录服、游戏服）的 gRPC 通信封装。
+// 游戏服可通过 gRPC 调用网关，向指定房间或单个玩家主动推送消息。
+// 使用函数变量注入模式避免循环依赖（rpc 包不导入 gateway 或 handler）。
 
 package rpc
 

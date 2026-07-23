@@ -1,6 +1,4 @@
-// 游戏服 gRPC 服务端实现
-// 包含匹配、取消匹配、房间信息查询等 RPC 接口
-
+// Package game 提供游戏服 gRPC 服务端实现，包含匹配、取消匹配、房间信息查询、玩家操作、离线处理等 RPC 接口。
 package game
 
 import (

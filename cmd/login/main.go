@@ -1,3 +1,4 @@
+// 登录服入口，负责用户注册、登录、Token 校验等账号相关服务。
 package main
 
 import (

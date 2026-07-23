@@ -1,5 +1,5 @@
-// rate_limit.go 实现玩家级令牌桶限流中间件。
-// 每个玩家独立维护一个令牌桶，防止单个玩家发送过多请求导致服务过载。
+// Package middleware 提供网关中间件，包括全链路追踪、日志记录、限流和鉴权。
+// rate_limit.go 实现玩家级令牌桶限流中间件，每个玩家独立维护一个令牌桶，防止单个玩家发送过多请求导致服务过载。
 // 使用 golang.org/x/time/rate 实现标准令牌桶算法。
 
 package middleware

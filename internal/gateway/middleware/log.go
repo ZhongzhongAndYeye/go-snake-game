@@ -1,3 +1,4 @@
+// Package middleware 提供网关中间件，包括全链路追踪、日志记录、限流和鉴权。
 package middleware
 
 import (

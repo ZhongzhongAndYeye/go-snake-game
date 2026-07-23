@@ -1,3 +1,4 @@
+// Package login 提供登录服 gRPC 服务端实现，处理注册、登录、Token 校验等 RPC 接口。
 package login
 
 import (

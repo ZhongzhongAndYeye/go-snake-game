@@ -1,5 +1,4 @@
-// 匹配管理器 — 基于 Redis List 实现双人匹配队列
-
+// Package match 提供基于 Redis List 的双人匹配队列管理，包括入队、取消、超时扫描等功能。
 package match
 
 import (

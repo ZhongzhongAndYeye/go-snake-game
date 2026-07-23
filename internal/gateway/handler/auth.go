@@ -1,3 +1,4 @@
+// Package handler 提供消息处理函数类型定义和 Session 接口，避免子包间循环依赖。
 package handler
 
 import (
@@ -99,6 +100,7 @@ func LoginHandler(s Session, packet *network.Packet) {
 	logger.Info("登录响应发送成功", "session_id", s.LogID(), "username", username, "player_id", resp.PlayerId, "code", resp.Code)
 }
 
+// validateRegisterParams 校验注册参数，检查用户名和密码的长度限制。
 func validateRegisterParams(username, password string) error {
 	if username == "" {
 		return errors.New("用户名为空")
@@ -121,6 +123,7 @@ func validateRegisterParams(username, password string) error {
 	return nil
 }
 
+// validateLoginParams 校验登录参数，检查用户名和密码是否为空且不超长。
 func validateLoginParams(username, password string) error {
 	if username == "" {
 		return errors.New("用户名为空")
